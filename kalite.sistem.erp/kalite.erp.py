@@ -5,17 +5,14 @@ from flask import flash
 import json
 
 app = Flask(__name__)
-app.secret_key = "123"
+app.secret_key = "key"
 
 
-# --- SQL SERVER BAĞLANTI AYARI ---
-# Tek bir bağlantı fonksiyonu: get_db_connection()
-# Uygunsuzluk route'larında da bu kullanılıyor artık (db_baglan() kaldırıldı)
 def get_db_connection():
     conn_str = (
-        r"DRIVER={ODBC Driver 18 for SQL Server};"
-        r"SERVER=.\SQLEXPRESS;"
-        r"DATABASE=KYS;"
+        r"DRIVER={server};"
+        r"SERVER=sql;"
+        r"DATABASE=data;"
         r"Trusted_Connection=yes;"
         r"Encrypt=no;"
     )
@@ -814,20 +811,7 @@ def uygunsuzluk_getir(kayit_id):
         return jsonify({'hata': str(e)}), 500
 
 
-# =============================================================================
-# API ROUTE 3 — Yeni Kayıt Ekle
-# POST /uygunsuzluk/ekle
-#
-# İki farklı kaynaktan çağrılır:
-#
-#   [A] uygunsuzluk.html → kaydetUygunsuzluk() → Manuel kayıt
-#       kaynak_turu : 'Müşteri Şikayeti', 'İnsan Kaynaklı' vb.
-#       uygunsuzluk_tipi : GÖNDERİLMEZ → risk_skoru'ndan burada hesaplanır
-#
-#   [B] denetim.html (veya denetim route'u) → Otomatik kayıt
-#       kaynak_turu : 'İç Denetim' veya 'Dış Denetim'
-#       uygunsuzluk_tipi : 'Majör' veya 'Minör' olarak gönderilir → değiştirilmez
-# =============================================================================
+
 @app.route('/uygunsuzluk/ekle', methods=['POST'])
 def uygunsuzluk_ekle():
     if 'rol' not in session:
@@ -1089,9 +1073,7 @@ def uygunsuzluk_durum_guncelle(kayit_id):
         return jsonify({'hata': str(e)}), 500
 
 
-# =============================================================================
-# DENETİM MODÜLÜ İÇİN YARDIMCI FONKSİYON
-# =============================================================================
+
 def denetimden_uygunsuzluk_olustur(cursor, veri, uygunsuzluk_tipi):
     """
     Denetim kaynağından uygunsuzluk oluşturur.
