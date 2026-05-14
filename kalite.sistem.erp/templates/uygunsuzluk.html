@@ -1,0 +1,787 @@
+{% extends "ana.html" %}
+{% block icerik %}
+<div class="d-flex justify-content-between align-items-center mb-2">
+<h3 class="mb-1 fw-bold" style="color:#1e293b;">Uygunsuzluk Yönetimi</h3>
+</div>
+
+<style>
+    {% if session.get('rol') != 'editor' %}
+    .admin-ozel { display: none !important; }
+    {% endif %}
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .kpi-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .kpi-card .kpi-num { font-size: 28px; font-weight: 800; line-height: 1; }
+    .kpi-card .kpi-lbl { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+    #uygunsuzlukTablosu thead tr th { font-weight: 600; font-size: 12.5px; vertical-align: middle; }
+    #uygunsuzlukTablosu tbody tr:hover { background-color: #f0f4ff !important; }
+    .risk-dusuk   { background:#d4edda !important; color:#155724 !important; }
+    .risk-orta    { background:#fff3cd !important; color:#856404 !important; }
+    .risk-yuksek  { background:#f8d7da !important; color:#842029 !important; }
+    .risk-kritik  { background:#dc3545 !important; color:#fff !important; }
+
+    .doc-card { border: 1px solid #e5e7eb; border-radius: 16px; background: #fff; transition: box-shadow 0.25s, transform 0.25s; height: 100%; overflow: hidden; }
+    .doc-card:hover { box-shadow: 0 8px 32px rgba(37,99,235,.13); transform: translateY(-4px); }
+    .doc-card-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; }
+    .doc-card-body { padding: 28px 24px 20px 24px; display: flex; flex-direction: column; gap: 6px; }
+    .doc-card-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+    .doc-card-desc  { font-size: 12.5px; color: #64748b; min-height: 36px; }
+    .doc-card-footer { padding: 0 24px 22px 24px; }
+    .btn-doc { width: 100%; border-radius: 10px; border: 1.5px solid #2563eb; color: #2563eb; background: transparent; font-size: 13px; font-weight: 600; padding: 9px 0; display: flex; align-items: center; justify-content: center; gap: 7px; transition: background 0.18s, color 0.18s; cursor: pointer; }
+    .btn-doc:hover { background: #2563eb; color: #fff; }
+    .icon-blue { background: #eff6ff; color: #2563eb; }
+
+    /* DIF Aktar butonu */
+    .btn-dif-aktar {
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+        white-space: nowrap;
+    }
+    .btn-dif-aktar:hover { background: #1d4ed8; }
+    .btn-dif-aktar:disabled { background: #94a3b8; cursor: not-allowed; }
+    .badge-aktarildi {
+        background: #dcfce7;
+        color: #166534;
+        border-radius: 6px;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+</style>
+
+<!-- KPI KARTLARI -->
+<div class="kpi-grid mb-4">
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#2563eb;">{{ uygunsuzluklar | length if uygunsuzluklar else 0 }}</div>
+        <div class="kpi-lbl">Toplam Uygunsuzluk</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#dc2626;">
+            {{ uygunsuzluklar | selectattr('durum','equalto','Açık') | list | length if uygunsuzluklar else 0 }}
+        </div>
+        <div class="kpi-lbl">Açık Uygunsuzluk</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#d97706;">
+            {{ uygunsuzluklar | selectattr('durum','equalto','Devam Ediyor') | list | length if uygunsuzluklar else 0 }}
+        </div>
+        <div class="kpi-lbl">Devam Eden</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#16a34a;">
+            {{ uygunsuzluklar | selectattr('durum','equalto','Kapatıldı') | list | length if uygunsuzluklar else 0 }}
+        </div>
+        <div class="kpi-lbl">Kapatılan</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#7c3aed;">
+            {% set toplam = uygunsuzluklar | length if uygunsuzluklar else 0 %}
+            {% set kapali2 = uygunsuzluklar | selectattr('durum','equalto','Kapatıldı') | list | length if uygunsuzluklar else 0 %}
+            {{ ((kapali2 / toplam) * 100) | int if toplam > 0 else 0 }}%
+        </div>
+        <div class="kpi-lbl">Kapanma Oranı</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#b91c1c;">
+            {{ uygunsuzluklar | selectattr('uygunsuzluk_tipi','equalto','Majör') | list | length if uygunsuzluklar else 0 }}
+        </div>
+        <div class="kpi-lbl">Majör Uygunsuzluk</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#ea580c;">
+            {{ uygunsuzluklar | selectattr('uygunsuzluk_tipi','equalto','Minör') | list | length if uygunsuzluklar else 0 }}
+        </div>
+        <div class="kpi-lbl">Minör Uygunsuzluk</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#0891b2;">
+            {{ uygunsuzluklar | selectattr('uygunsuzluk_tipi','equalto','Gözlem') | list | length if uygunsuzluklar else 0 }}
+        </div>
+        <div class="kpi-lbl">Gözlem</div>
+    </div>
+</div>
+
+<!-- MODÜL KARTLARI -->
+<div class="row g-4">
+    <div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-blue"><i class="bi bi-file-text"></i></div>
+                <div class="doc-card-title">Uygunsuzluk Prosedürü</div>
+                <div class="doc-card-desc">Uygunsuzlukların tanımlanması ve yönetim prosedürü</div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#uygunsuzlukModal">
+                    <i class="bi bi-arrow-right-circle"></i> Modülü Aç
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-blue"><i class="bi bi-list-check"></i></div>
+                <div class="doc-card-title">Uygunsuzluk Takip Tablosu</div>
+                <div class="doc-card-desc">Tespit edilen uygunsuzlukların kayıt ve takibi</div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#uygunsuzlukTabloModal">
+                    <i class="bi bi-arrow-right-circle"></i> Listeyi Aç
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     MODAL: UYGUNSUZLUK TABLOSU
+================================================================ -->
+<div class="modal fade" id="uygunsuzlukTabloModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius:10px; overflow:hidden;">
+            <div class="modal-header" style="background-color:#1a2b45; color:#fff; border-bottom:none;">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-exclamation-triangle me-2" style="color:#f0a500;"></i>
+                    Uygunsuzluk Listesi
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div style="padding:18px 24px 8px 24px; background:#fff; border-bottom:1px solid #e9ecef;">
+                <div class="row g-2 align-items-center mb-2">
+                    <div class="col-auto">
+                        <label class="fw-semibold" style="font-size:13.5px; color:#333;">Sorumlu Filtresi:</label>
+                    </div>
+                    <div class="col">
+                        <input type="text" id="soruluFilter" class="form-control form-control-sm"
+                               placeholder="İsim yazınız..." oninput="tabloFiltrele()" style="max-width:380px;">
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-sm" style="background-color:#198754;color:#fff;border:none;" onclick="tabloYenile()">Onayla</button>
+                    </div>
+                </div>
+                <input type="text" id="genelArama" class="form-control form-control-sm mb-2" placeholder="Ara..." oninput="tabloFiltrele()">
+                <button class="btn btn-sm admin-ozel mb-2" style="background-color:#0d6efd;color:#fff;border:none;"
+                        data-bs-toggle="modal" data-bs-target="#yeniUygunsuzlukModal">
+                    <i class="bi bi-plus-circle me-1"></i>Yeni Kayıt
+                </button>
+            </div>
+
+            <div class="modal-body p-0">
+                <div class="table-responsive" style="padding:0 24px 24px;">
+                    <div id="tabloYukleniyor" style="text-align:center;padding:40px;color:#888;display:none;">
+                        <div class="spinner-border spinner-border-sm me-2" style="color:#1a2b45;"></div>Veriler yükleniyor...
+                    </div>
+                    <table class="table table-hover align-middle" id="uygunsuzlukTablosu"
+                           style="font-size:13.5px; margin-top:16px; min-width:1800px;">
+                        <thead>
+                            <tr style="background-color:#1a2b45; color:#fff;">
+                                <th style="padding:10px 14px;">No</th>
+                                <th>Uygunsuzluk Tanımı *</th>
+                                <th>Kaynak Türü</th>
+                                <th>Tip</th>
+                                <th>İlgili Süreç</th>
+                                <th>Müdürlük / Birim *</th>
+                                <th>Tespit Tarihi *</th>
+                                <th>Tespit Yeri</th>
+                                <th>Sorumlu *</th>
+                                <th>Olasılık</th>
+                                <th>Etki</th>
+                                <th>Risk Skoru</th>
+                                <th>Durum</th>
+                                <th>DÖF Aksiyonu</th>
+                                <th class="admin-ozel">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="uygunsuzlukBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     YENİ UYGUNSUZLUK KAYIT MODALI
+================================================================ -->
+<div class="modal fade admin-ozel" id="yeniUygunsuzlukModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius:10px; overflow:hidden;">
+            <div class="modal-header" style="background-color:#1a2b45; color:#fff; border-bottom:none;">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-plus-circle me-2" style="color:#6ea8fe;"></i>
+                    Yeni Uygunsuzluk Kaydı
+                    <small style="font-size:12px; font-weight:400; color:#adb5bd; margin-left:8px;">(İç Kontrol / Proses İzleme / Manuel)</small>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:28px;">
+                <div id="kayitHataMesaji" style="display:none; background:#f8d7da; color:#842029; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-size:13px;"></div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Uygunsuzluk Tanımı * <small class="text-muted fw-normal">(ISO 10.2.2.a)</small></label>
+                        <textarea id="f_tanim" class="form-control form-control-sm" rows="3" placeholder="Uygunsuzluğu ayrıntılı tanımlayın..."></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Kaynak Türü</label>
+                        <select id="f_kaynak" class="form-select form-select-sm">
+                            <option value="">Seçiniz...</option>
+                            <option value="Müşteri Şikayeti">Müşteri Şikayeti</option>
+                            <option value="İnsan Kaynaklı">İnsan Kaynaklı</option>
+                            <option value="Süreç/Operasyon">Süreç/Operasyon</option>
+                            <option value="Dökümantasyon">Dökümantasyon</option>
+                            <option value="Sistemsel">Sistemsel</option>
+                            <option value="Diğer">Diğer</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Uygunsuzluk Tipi <small class="text-muted fw-normal">(Risk puanından otomatik)</small></label>
+                        <div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:5px 12px; font-size:13px; color:#6c757d; min-height:31px; line-height:2;">
+                            <i class="bi bi-info-circle me-1" style="color:#0d6efd;"></i>Risk puanı girince otomatik belirlenir
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">İlgili Süreç <small class="text-muted fw-normal">(ISO 4.4)</small></label>
+                        <input type="text" id="f_surec" class="form-control form-control-sm" placeholder="örn: Satın Alma, Üretim, Sevkiyat...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Müdürlük / Birim *</label>
+                        <input type="text" id="f_mudurluk" class="form-control form-control-sm" placeholder="örn: Üretim Müdürlüğü">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Tespit Tarihi *</label>
+                        <input type="date" id="f_tarih" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Tespit Yeri</label>
+                        <input type="text" id="f_yer" class="form-control form-control-sm" placeholder="örn: Giriş Kalite Kontrol...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Sorumlu *</label>
+                        <input type="text" id="f_sorumlu" class="form-control form-control-sm" placeholder="Ad Soyad veya Unvan">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Olasılık <small class="text-muted fw-normal">(1=Çok Düşük, 5=Çok Yüksek)</small></label>
+                        <select id="f_olasilik" class="form-select form-select-sm" onchange="riskHesapla('f')">
+                            <option value="">Seçiniz...</option>
+                            <option value="1">1 - Çok Düşük</option>
+                            <option value="2">2 - Düşük</option>
+                            <option value="3">3 - Orta</option>
+                            <option value="4">4 - Yüksek</option>
+                            <option value="5">5 - Çok Yüksek</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Etki <small class="text-muted fw-normal">(1=Çok Düşük, 5=Kritik)</small></label>
+                        <select id="f_etki" class="form-select form-select-sm" onchange="riskHesapla('f')">
+                            <option value="">Seçiniz...</option>
+                            <option value="1">1 - Çok Düşük</option>
+                            <option value="2">2 - Düşük</option>
+                            <option value="3">3 - Orta</option>
+                            <option value="4">4 - Yüksek</option>
+                            <option value="5">5 - Kritik</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Risk Skoru <small class="text-muted fw-normal">(Olasılık × Etki)</small></label>
+                        <div id="f_risk_goster" style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:5px 10px; font-size:14px; font-weight:700; min-height:31px; color:#333;">—</div>
+                        <input type="hidden" id="f_risk_skoru">
+                    </div>
+                    <div class="col-12"><div id="f_tip_onizleme" style="display:none;"></div></div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid #e9ecef;">
+                <button type="button" class="btn btn-sm" style="background:#6c757d;color:#fff;" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-sm" id="kaydetBtn" style="background:#1a2b45;color:#fff;" onclick="kaydetUygunsuzluk()">
+                    <i class="bi bi-save me-1"></i>Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     DÜZENLE MODALI
+================================================================ -->
+<div class="modal fade admin-ozel" id="duzenleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius:10px; overflow:hidden;">
+            <div class="modal-header" style="background-color:#f0a500; color:#fff; border-bottom:none;">
+                <h5 class="modal-title fw-semibold"><i class="bi bi-pencil-square me-2"></i>Uygunsuzluk Kaydını Düzenle</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:28px;">
+                <div id="duzenleHataMesaji" style="display:none; background:#f8d7da; color:#842029; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-size:13px;"></div>
+                <input type="hidden" id="d_id">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Uygunsuzluk Tanımı *</label>
+                        <textarea id="d_tanim" class="form-control form-control-sm" rows="3"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Kaynak Türü</label>
+                        <input type="text" id="d_kaynak" class="form-control form-control-sm" readonly style="background:#f8f9fa;">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Uygunsuzluk Tipi</label>
+                        <input type="text" id="d_tip" class="form-control form-control-sm" readonly style="background:#f8f9fa;">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">İlgili Süreç</label>
+                        <input type="text" id="d_surec" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Müdürlük / Birim *</label>
+                        <input type="text" id="d_mudurluk" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Tespit Tarihi *</label>
+                        <input type="date" id="d_tarih" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Tespit Yeri</label>
+                        <input type="text" id="d_yer" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Sorumlu *</label>
+                        <input type="text" id="d_sorumlu" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Olasılık <small class="text-muted fw-normal">(1-5)</small></label>
+                        <select id="d_olasilik" class="form-select form-select-sm" onchange="riskHesapla('d')">
+                            <option value="">Seçiniz...</option>
+                            <option value="1">1 - Çok Düşük</option><option value="2">2 - Düşük</option>
+                            <option value="3">3 - Orta</option><option value="4">4 - Yüksek</option>
+                            <option value="5">5 - Çok Yüksek</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Etki <small class="text-muted fw-normal">(1-5)</small></label>
+                        <select id="d_etki" class="form-select form-select-sm" onchange="riskHesapla('d')">
+                            <option value="">Seçiniz...</option>
+                            <option value="1">1 - Çok Düşük</option><option value="2">2 - Düşük</option>
+                            <option value="3">3 - Orta</option><option value="4">4 - Yüksek</option>
+                            <option value="5">5 - Kritik</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold" style="font-size:13px;">Risk Skoru <small class="text-muted fw-normal">(Otomatik)</small></label>
+                        <div id="d_risk_goster" style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:5px 10px; font-size:14px; font-weight:700; min-height:31px; color:#333;">—</div>
+                        <input type="hidden" id="d_risk_skoru">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid #e9ecef;">
+                <button type="button" class="btn btn-sm" style="background:#6c757d;color:#fff;" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-sm" id="guncelleBtn" style="background:#f0a500;color:#fff;" onclick="guncelleUygunsuzluk()">
+                    <i class="bi bi-save me-1"></i>Güncelle
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     DIF AKTAR ONAY MODALI
+================================================================ -->
+<div class="modal fade admin-ozel" id="difAktarModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px; overflow:hidden;">
+            <div class="modal-header" style="background:#1f2d3d; color:#fff; border:none;">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-arrow-right-circle me-2" style="color:#60a5fa;"></i>Düzeltici Faaliyete Aktar
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+                <div id="dif_aktar_hata" style="display:none; background:#f8d7da; color:#842029; padding:9px 14px; border-radius:6px; margin-bottom:12px; font-size:13px;"></div>
+                <p style="font-size:13px; color:#334155; margin-bottom:8px;">
+                    Aşağıdaki uygunsuzluk <strong>DÖF Takip Paneli</strong>'ne aktarılacak ve durumu
+                    <span style="background:#fff3cd; color:#856404; padding:2px 8px; border-radius:4px; font-weight:600;">Devam Ediyor</span>
+                    olarak güncellenecektir.
+                </p>
+                <div id="dif_aktar_ozet" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; margin-bottom:4px; font-size:13px;"></div>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid #e2e8f0;">
+                <button type="button" class="btn btn-sm" style="background:#6b7280; color:#fff;" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-sm px-4" id="dif_aktar_onayla_btn" style="background:#2563eb; color:#fff;" onclick="difAktarOnayla()">
+                    <i class="bi bi-check-circle me-1"></i>Onayla ve Aktar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     JAVASCRIPT
+================================================================ -->
+<script>
+const KULLANICI_ROL = "{{ session.get('rol', '') }}";
+var _difAktarUygId = null;
+
+// ── Risk Hesapla ──
+function skordan_tip(skor) {
+    if (!skor || skor <= 0) return null;
+    if (skor <= 4)  return 'Gözlem';
+    if (skor <= 9)  return 'Minör';
+    return 'Majör';
+}
+
+function riskHesapla(prefix) {
+    var olasilik = parseInt(document.getElementById(prefix + '_olasilik').value) || 0;
+    var etki     = parseInt(document.getElementById(prefix + '_etki').value)     || 0;
+    var skor     = olasilik * etki;
+    var gosterEl = document.getElementById(prefix + '_risk_goster');
+    var saklEl   = document.getElementById(prefix + '_risk_skoru');
+    var tipEl    = document.getElementById(prefix + '_tip_onizleme');
+
+    if (skor === 0) {
+        gosterEl.innerHTML = '—';
+        gosterEl.className = '';
+        gosterEl.style.cssText = 'background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;padding:5px 10px;font-size:14px;font-weight:700;min-height:31px;color:#333;';
+        saklEl.value = '';
+        if (tipEl) { tipEl.innerHTML = ''; tipEl.style.display = 'none'; }
+        return;
+    }
+    saklEl.value = skor;
+
+    var riskEtiket = skor <= 4 ? 'Düşük' : skor <= 9 ? 'Orta' : skor <= 14 ? 'Yüksek' : 'Kritik';
+    var sinif = skor <= 4 ? 'risk-dusuk' : skor <= 9 ? 'risk-orta' : skor <= 14 ? 'risk-yuksek' : 'risk-kritik';
+    gosterEl.textContent = skor + ' — ' + riskEtiket;
+    gosterEl.style.cssText = 'border:1px solid #dee2e6;border-radius:6px;padding:5px 10px;font-size:13px;font-weight:700;min-height:31px;';
+    gosterEl.className = sinif;
+
+    var tip = skordan_tip(skor);
+    if (tipEl && tip) {
+        var tipRenk = tip === 'Gözlem' ? 'background:#0dcaf0;color:#fff;' : tip === 'Minör' ? 'background:#fd7e14;color:#fff;' : 'background:#dc3545;color:#fff;';
+        tipEl.style.display = 'block';
+        tipEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;">' +
+            '<span style="font-size:12px;color:#666;">Atanacak tip:</span>' +
+            '<span class="badge" style="' + tipRenk + ' padding:4px 12px;border-radius:10px;font-size:12px;font-weight:600;">' + tip + '</span>' +
+            '</div>';
+    }
+}
+
+function riskBadge(skor) {
+    if (!skor) return '<span style="color:#aaa;font-size:12px;">—</span>';
+    var seviye = skor <= 4 ? 'Düşük' : skor <= 9 ? 'Orta' : skor <= 14 ? 'Yüksek' : 'Kritik';
+    var stil = skor <= 4 ? 'background:#d4edda;color:#155724;' : skor <= 9 ? 'background:#fff3cd;color:#856404;' :
+               skor <= 14 ? 'background:#f8d7da;color:#842029;' : 'background:#dc3545;color:#fff;';
+    return '<span class="badge" style="' + stil + ' padding:5px 10px;border-radius:12px;font-size:12px;font-weight:700;">' +
+        skor + ' <span style="font-weight:400;font-size:10px;">(' + seviye + ')</span></span>';
+}
+
+// ── Tablo Yenile ──
+function tabloYenile() {
+    var yukleniyor = document.getElementById('tabloYukleniyor');
+    var tbody = document.getElementById('uygunsuzlukBody');
+    yukleniyor.style.display = 'block';
+    tbody.innerHTML = '';
+
+    fetch('/uygunsuzluk/listele')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            yukleniyor.style.display = 'none';
+            if (data.hata) {
+                tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;color:red;">Hata: ' + data.hata + '</td></tr>';
+                return;
+            }
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;color:#888;padding:30px;">Kayıt bulunamadı.</td></tr>';
+                return;
+            }
+
+            data.forEach(function(u) {
+                var durum = u.durum || 'Açık';
+                var durumStil = durum === 'Kapatıldı' ? 'background:#d4edda;color:#155724;' :
+                                durum === 'Devam Ediyor' ? 'background:#fff3cd;color:#856404;' :
+                                'background:#f8d7da;color:#842029;';
+
+                var kaynakStil = 'background:#e9ecef;color:#495057;';
+                if (u.kaynak_turu === 'İç Denetim') kaynakStil = 'background:#f0e6ff;color:#4a0080;';
+                else if (u.kaynak_turu === 'Dış Denetim') kaynakStil = 'background:#fde8e8;color:#7f1d1d;';
+                else if (u.kaynak_turu === 'Müşteri Şikayeti') kaynakStil = 'background:#fff3e0;color:#7c4700;';
+
+                var tipBadge = '<span style="color:#aaa;font-size:12px;">—</span>';
+                if (u.uygunsuzluk_tipi) {
+                    var tipStil = u.uygunsuzluk_tipi === 'Majör' ? 'background:#dc3545;color:#fff;' :
+                                  u.uygunsuzluk_tipi === 'Minör' ? 'background:#fd7e14;color:#fff;' : 'background:#0dcaf0;color:#fff;';
+                    tipBadge = '<span class="badge" style="' + tipStil + ' padding:4px 9px;border-radius:10px;font-size:11px;">' + u.uygunsuzluk_tipi + '</span>';
+                }
+
+                var tarihGoster = '—';
+                if (u.tespit_tarihi) {
+                    var t = new Date(u.tespit_tarihi);
+                    tarihGoster = isNaN(t.getTime()) ? u.tespit_tarihi : t.toLocaleDateString('tr-TR');
+                }
+
+                // DIF Aktar butonu: sadece editor ve "Açık" olan kayıtlar
+                var difAktarTd = '';
+                if (KULLANICI_ROL === 'editor') {
+                    if (durum === 'Açık') {
+                        difAktarTd = '<td><button class="btn-dif-aktar" onclick="difAktarAc(' + u.id + ',\'' +
+                            (u.tanim || '').replace(/'/g, "\\'").substring(0, 60) + '\',\'' +
+                            (u.sorumlu || '') + '\')">' +
+                            '<i class="bi bi-arrow-right-circle me-1"></i>DÖF\'e Aktar</button></td>';
+                    } else if (durum === 'Devam Ediyor') {
+                        difAktarTd = '<td><span class="badge" style="background:#fff3cd;color:#856404;font-size:11px;"><i class="bi bi-hourglass-split me-1"></i>DÖF Açık</span></td>';
+                    } else if (durum === 'Kapatıldı') {
+                        difAktarTd = '<td><span class="badge-aktarildi"><i class="bi bi-check-circle me-1"></i>DÖF Kapandı</span></td>';
+                    } else {
+                        difAktarTd = '<td>—</td>';
+                    }
+                } else {
+                    // izleyici: sadece durum göster
+                    if (durum === 'Devam Ediyor') {
+                        difAktarTd = '<td><span class="badge" style="background:#fff3cd;color:#856404;font-size:11px;">DÖF Açık</span></td>';
+                    } else if (durum === 'Kapatıldı') {
+                        difAktarTd = '<td><span class="badge-aktarildi">DÖF Kapandı</span></td>';
+                    } else {
+                        difAktarTd = '<td>—</td>';
+                    }
+                }
+
+                var islemButonlari = KULLANICI_ROL === 'editor' ?
+                    '<td class="admin-ozel">' +
+                    '<button class="btn btn-sm me-1" style="background:#f0a500;color:#fff;font-size:12px;" onclick="duzenleAc(' + u.id + ')">Düzenle</button>' +
+                    '<button class="btn btn-sm" style="background:#dc3545;color:#fff;font-size:12px;" onclick="silUygunsuzluk(' + u.id + ')">Sil</button>' +
+                    '</td>' : '';
+
+                tbody.innerHTML +=
+                    '<tr>' +
+                    '<td><span style="font-weight:600;color:#1a2b45;">' + u.id + '</span></td>' +
+                    '<td style="max-width:200px;">' + (u.tanim || '—') + '</td>' +
+                    '<td><span class="badge" style="' + kaynakStil + ' padding:4px 9px;border-radius:10px;font-size:11px;">' + (u.kaynak_turu || '—') + '</span></td>' +
+                    '<td>' + tipBadge + '</td>' +
+                    '<td>' + (u.ilgili_surec || '—') + '</td>' +
+                    '<td>' + (u.mudurluk || '—') + '</td>' +
+                    '<td>' + tarihGoster + '</td>' +
+                    '<td>' + (u.tespit_yeri || '—') + '</td>' +
+                    '<td>' + (u.sorumlu || '—') + '</td>' +
+                    '<td style="text-align:center;">' + (u.olasilik || '—') + '</td>' +
+                    '<td style="text-align:center;">' + (u.etki || '—') + '</td>' +
+                    '<td>' + riskBadge(u.risk_skoru) + '</td>' +
+                    '<td><span class="badge" style="' + durumStil + ' padding:5px 10px;border-radius:12px;">' + durum + '</span></td>' +
+                    difAktarTd +
+                    islemButonlari +
+                    '</tr>';
+            });
+        })
+        .catch(function(hata) {
+            yukleniyor.style.display = 'none';
+            tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;color:red;">Sunucuya bağlanılamadı: ' + hata + '</td></tr>';
+        });
+}
+
+function tabloFiltrele() {
+    var araMetni = document.getElementById('genelArama').value.toLowerCase();
+    var soruluMetni = document.getElementById('soruluFilter').value.toLowerCase();
+    document.querySelectorAll('#uygunsuzlukBody tr').forEach(function(satir) {
+        var metin = satir.textContent.toLowerCase();
+        satir.style.display = (metin.includes(araMetni) && metin.includes(soruluMetni)) ? '' : 'none';
+    });
+}
+
+// ── DIF Aktar ──
+function difAktarAc(id, tanim, sorumlu) {
+    _difAktarUygId = id;
+    var hataEl = document.getElementById('dif_aktar_hata');
+    if (hataEl) hataEl.style.display = 'none';
+    var btn = document.getElementById('dif_aktar_onayla_btn');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Onayla ve Aktar'; }
+
+    document.getElementById('dif_aktar_ozet').innerHTML =
+        '<div style="margin-bottom:6px;"><strong>No:</strong> ' + id + '</div>' +
+        '<div style="margin-bottom:6px;"><strong>Tanım:</strong> ' + (tanim || '—') + '</div>' +
+        '<div><strong>Sorumlu:</strong> ' + (sorumlu || '—') + '</div>';
+
+    new bootstrap.Modal(document.getElementById('difAktarModal')).show();
+}
+
+function difAktarOnayla() {
+    if (!_difAktarUygId) return;
+    var hataEl = document.getElementById('dif_aktar_hata');
+    var btn = document.getElementById('dif_aktar_onayla_btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Aktarılıyor...';
+
+    fetch('/dif/uygunsuzluktan-aktar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uygunsuzluk_id: _difAktarUygId })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(s) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Onayla ve Aktar';
+        if (s.hata) {
+            hataEl.textContent = s.hata;
+            hataEl.style.display = 'block';
+            return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById('difAktarModal')).hide();
+        tabloYenile();
+        // Başarı bildirimi
+        setTimeout(function() {
+            var toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#16a34a;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+            toast.innerHTML = '<i class="bi bi-check-circle me-2"></i>' + (s.dof_no || 'DÖF') + ' takip paneline aktarıldı!';
+            document.body.appendChild(toast);
+            setTimeout(function() { toast.remove(); }, 3500);
+        }, 400);
+    })
+    .catch(function(e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Onayla ve Aktar';
+        hataEl.textContent = 'Bağlantı hatası: ' + e;
+        hataEl.style.display = 'block';
+    });
+}
+
+// ── Kaydet ──
+function kaydetUygunsuzluk() {
+    var hataMesaji = document.getElementById('kayitHataMesaji');
+    hataMesaji.style.display = 'none';
+    var veri = {
+        tanim:         document.getElementById('f_tanim').value.trim(),
+        kaynak_turu:   document.getElementById('f_kaynak').value,
+        ilgili_surec:  document.getElementById('f_surec').value.trim(),
+        mudurluk:      document.getElementById('f_mudurluk').value.trim(),
+        tespit_tarihi: document.getElementById('f_tarih').value,
+        tespit_yeri:   document.getElementById('f_yer').value.trim(),
+        sorumlu:       document.getElementById('f_sorumlu').value.trim(),
+        olasilik:      document.getElementById('f_olasilik').value || null,
+        etki:          document.getElementById('f_etki').value || null,
+        risk_skoru:    document.getElementById('f_risk_skoru').value || null,
+        durum:         'Açık'
+    };
+    if (!veri.tanim)         { hataMesaji.textContent = 'Uygunsuzluk Tanımı boş bırakılamaz.'; hataMesaji.style.display = 'block'; return; }
+    if (!veri.mudurluk)      { hataMesaji.textContent = 'Müdürlük / Birim boş bırakılamaz.';  hataMesaji.style.display = 'block'; return; }
+    if (!veri.tespit_tarihi) { hataMesaji.textContent = 'Tespit Tarihi boş bırakılamaz.';      hataMesaji.style.display = 'block'; return; }
+    if (!veri.sorumlu)       { hataMesaji.textContent = 'Sorumlu boş bırakılamaz.';            hataMesaji.style.display = 'block'; return; }
+
+    var btn = document.getElementById('kaydetBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Kaydediliyor...';
+
+    fetch('/uygunsuzluk/ekle', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(veri)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(sonuc) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-1"></i>Kaydet';
+        if (sonuc.hata) { hataMesaji.textContent = 'Hata: ' + sonuc.hata; hataMesaji.style.display = 'block'; return; }
+        ['f_tanim','f_surec','f_mudurluk','f_yer','f_sorumlu'].forEach(function(id) { document.getElementById(id).value = ''; });
+        ['f_kaynak','f_olasilik','f_etki'].forEach(function(id) { document.getElementById(id).value = ''; });
+        document.getElementById('f_tarih').value = '';
+        document.getElementById('f_risk_skoru').value = '';
+        document.getElementById('f_risk_goster').textContent = '—';
+        document.getElementById('f_risk_goster').className = '';
+        var tipOnizleme = document.getElementById('f_tip_onizleme');
+        if (tipOnizleme) { tipOnizleme.innerHTML = ''; tipOnizleme.style.display = 'none'; }
+        bootstrap.Modal.getInstance(document.getElementById('yeniUygunsuzlukModal')).hide();
+        tabloYenile();
+    })
+    .catch(function(hata) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-1"></i>Kaydet';
+        hataMesaji.textContent = 'Sunucuya bağlanılamadı: ' + hata;
+        hataMesaji.style.display = 'block';
+    });
+}
+
+// ── Düzenle Aç ──
+function duzenleAc(id) {
+    var hataMesaji = document.getElementById('duzenleHataMesaji');
+    if (hataMesaji) hataMesaji.style.display = 'none';
+    fetch('/uygunsuzluk/' + id)
+        .then(function(r) { return r.json(); })
+        .then(function(u) {
+            if (u.hata) { alert('Kayıt yüklenemedi: ' + u.hata); return; }
+            document.getElementById('d_id').value       = u.id;
+            document.getElementById('d_tanim').value    = u.tanim || '';
+            document.getElementById('d_kaynak').value   = u.kaynak_turu || '';
+            document.getElementById('d_tip').value      = u.uygunsuzluk_tipi || '';
+            document.getElementById('d_surec').value    = u.ilgili_surec || '';
+            document.getElementById('d_mudurluk').value = u.mudurluk || '';
+            document.getElementById('d_tarih').value    = u.tespit_tarihi || '';
+            document.getElementById('d_yer').value      = u.tespit_yeri || '';
+            document.getElementById('d_sorumlu').value  = u.sorumlu || '';
+            document.getElementById('d_olasilik').value = u.olasilik || '';
+            document.getElementById('d_etki').value     = u.etki || '';
+            document.getElementById('d_risk_skoru').value = u.risk_skoru || '';
+            if (u.risk_skoru) { riskHesapla('d'); } else { document.getElementById('d_risk_goster').textContent = '—'; }
+            var guncelleBtn = document.getElementById('guncelleBtn');
+            if (guncelleBtn) { guncelleBtn.disabled = false; guncelleBtn.innerHTML = '<i class="bi bi-save me-1"></i>Güncelle'; }
+            new bootstrap.Modal(document.getElementById('duzenleModal')).show();
+        })
+        .catch(function(hata) { alert('Kayıt yüklenemedi: ' + hata); });
+}
+
+// ── Güncelle ──
+function guncelleUygunsuzluk() {
+    var id = document.getElementById('d_id').value;
+    var hataMesaji = document.getElementById('duzenleHataMesaji');
+    hataMesaji.style.display = 'none';
+    var tanim    = document.getElementById('d_tanim').value.trim();
+    var mudurluk = document.getElementById('d_mudurluk').value.trim();
+    var tarih    = document.getElementById('d_tarih').value;
+    var sorumlu  = document.getElementById('d_sorumlu').value.trim();
+    if (!tanim)    { hataMesaji.textContent = 'Uygunsuzluk Tanımı boş bırakılamaz.'; hataMesaji.style.display = 'block'; return; }
+    if (!mudurluk) { hataMesaji.textContent = 'Müdürlük / Birim boş bırakılamaz.';  hataMesaji.style.display = 'block'; return; }
+    if (!tarih)    { hataMesaji.textContent = 'Tespit Tarihi boş bırakılamaz.';      hataMesaji.style.display = 'block'; return; }
+    if (!sorumlu)  { hataMesaji.textContent = 'Sorumlu boş bırakılamaz.';            hataMesaji.style.display = 'block'; return; }
+    var veri = {
+        tanim:         tanim,
+        ilgili_surec:  document.getElementById('d_surec').value.trim(),
+        mudurluk:      mudurluk,
+        tespit_tarihi: tarih,
+        tespit_yeri:   document.getElementById('d_yer').value.trim(),
+        sorumlu:       sorumlu,
+        olasilik:      document.getElementById('d_olasilik').value || null,
+        etki:          document.getElementById('d_etki').value || null,
+        risk_skoru:    document.getElementById('d_risk_skoru').value || null
+    };
+    var btn = document.getElementById('guncelleBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Güncelleniyor...';
+    fetch('/uygunsuzluk/guncelle/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(veri) })
+        .then(function(r) { return r.json(); })
+        .then(function(sonuc) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-save me-1"></i>Güncelle';
+            if (sonuc.hata) { hataMesaji.textContent = 'Hata: ' + sonuc.hata; hataMesaji.style.display = 'block'; return; }
+            bootstrap.Modal.getInstance(document.getElementById('duzenleModal')).hide();
+            tabloYenile();
+        })
+        .catch(function(hata) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-save me-1"></i>Güncelle'; hataMesaji.textContent = 'Sunucuya bağlanılamadı: ' + hata; hataMesaji.style.display = 'block'; });
+}
+
+// ── Sil ──
+function silUygunsuzluk(id) {
+    if (!confirm('Bu kaydı silmek istediğinizden emin misiniz?')) return;
+    fetch('/uygunsuzluk/sil/' + id, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(sonuc) {
+            if (sonuc.hata) { alert('Silme hatası: ' + sonuc.hata); return; }
+            tabloYenile();
+        })
+        .catch(function(hata) { alert('Sunucuya bağlanılamadı: ' + hata); });
+}
+
+// ── Modal Açılışı ──
+document.getElementById('uygunsuzlukTabloModal').addEventListener('show.bs.modal', function() {
+    tabloYenile();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1479 @@
+{% extends "ana.html" %}
+{% block icerik %}
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ══ GENEL DEĞİŞKENLER ══ */
+:root {
+  --bg:           #f0f4f8;
+  --surface:      #ffffff;
+  --surface-2:    #f7f9fc;
+  --surface-3:    #edf1f7;
+  --border:       rgba(0,0,0,.08);
+  --border-soft:  rgba(0,0,0,.05);
+  --text:         #1a2332;
+  --text-2:       #3d5166;
+  --text-muted:   #7a90a6;
+  --sidebar:      #1a2332;
+  --accent:       #3b6ef5;
+  --accent-hover: #2a5be0;
+  --accent-light: #eff4ff;
+  --critical:     #e53e3e; --critical-bg: #fff5f5; --critical-border: #fed7d7;
+  --high:         #dd6b20; --high-bg:     #fffaf0; --high-border:     #fbd38d;
+  --medium:       #d69e2e; --medium-bg:   #fffff0; --medium-border:   #faf089;
+  --low:          #38a169; --low-bg:      #f0fff4; --low-border:      #c6f6d5;
+  --internal-color: #553c9a; --internal-bg: #faf5ff; --internal-border: #e9d8fd;
+  --external-color: #2b6cb0; --external-bg: #ebf8ff; --external-border: #bee3f8;
+  --r:            10px;
+  --r-lg:         16px;
+  --sh-sm:        0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --sh:           0 4px 16px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
+  --sh-lg:        0 20px 48px rgba(0,0,0,.14), 0 8px 20px rgba(0,0,0,.06);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══ EDITOR GİZLE ══ */
+{% if session.get('rol') != 'editor' %}
+.editor-only { display: none !important; }
+{% endif %}
+
+/* ══ DOC KART (ana sayfa kartı) ══ */
+.risk-module-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* KPI chips - kartın üstünde */
+.kpi-mini-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.kpi-mini-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  flex: 1;
+  min-width: 70px;
+  box-shadow: var(--sh-sm);
+  text-align: center;
+  transition: transform .18s ease, box-shadow .18s ease;
+  cursor: default;
+}
+.kpi-mini-chip:hover { transform: translateY(-2px); box-shadow: var(--sh); }
+.kpi-mini-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1;
+}
+.kpi-mini-lbl {
+  font-size: .6rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-top: 3px;
+}
+
+/* Başlık satırı */
+.risk-module-header {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 4px;
+}
+
+.doc-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  transition: box-shadow .25s, transform .25s;
+  overflow: hidden;
+}
+.doc-card:hover { box-shadow: 0 8px 32px rgba(37,99,235,.13); transform: translateY(-4px); }
+.doc-card-body { padding: 20px 24px 16px; display: flex; flex-direction: column; gap: 6px; }
+.doc-card-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+.doc-card-desc  { font-size: 12.5px; color: #64748b; min-height: 32px; }
+.doc-card-footer { padding: 0 24px 20px; }
+.btn-doc {
+  width: 100%; border-radius: 10px; border: 1.5px solid #2563eb; color: #2563eb;
+  background: transparent; font-size: 13px; font-weight: 600; padding: 9px 0;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: background .18s, color .18s; cursor: pointer;
+}
+.btn-doc:hover { background: #2563eb; color: #fff; }
+
+/* ══ BÜYÜK MODAL ══ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,20,40,.55); z-index: 1000;
+  backdrop-filter: blur(8px);
+  align-items: flex-start; justify-content: center;
+  padding: 0;
+  overflow-y: auto;
+}
+.modal-overlay.open { display: flex; }
+
+.risk-main-modal {
+  background: var(--surface);
+  border: none;
+
+  width: 100vw;
+  height: 100vh;
+
+  max-width: 100vw;
+  max-height: 100vh;
+
+  border-radius: 0;
+
+  box-shadow: none;
+
+  animation: mIn .22s ease;
+
+  overflow: hidden;
+
+  margin: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+@keyframes mIn {
+  from { opacity: 0; transform: translateY(22px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Modal header */
+.rm-header {
+  background: var(--sidebar);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.rm-header-left { display: flex; align-items: center; gap: 12px; }
+.rm-header-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(59,110,245,.25); color: #93c5fd;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.rm-header-title {
+  font-size: 1.1rem; font-weight: 700; color: #f1f5f9; letter-spacing: -.3px;
+}
+.rm-header-title span { color: #93c5fd; }
+.rm-header-sub { font-size: .72rem; color: #64748b; margin-top: 1px; }
+.rm-close {
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 50%; width: 32px; height: 32px; cursor: pointer;
+  color: #94a3b8; font-size: .85rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .13s;
+}
+.rm-close:hover { background: rgba(229,62,62,.2); color: #fc8181; border-color: rgba(229,62,62,.3); }
+
+/* KPI bar */
+.rm-kpi-bar {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.rm-kpi-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  flex: 1;
+  min-width: 0;
+  box-shadow: var(--sh-sm);
+  transition: transform .18s ease, box-shadow .18s ease;
+  cursor: default;
+}
+.rm-kpi-chip:hover { transform: translateY(-2px); box-shadow: var(--sh); }
+.rm-kpi-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.4rem; font-weight: 500; line-height: 1;
+}
+.rm-kpi-lbl {
+  font-size: .62rem; color: var(--text-muted);
+  font-weight: 600; text-transform: uppercase; letter-spacing: .7px; margin-top: 4px;
+}
+
+/* Tab bar */
+.rm-tabs {
+  display: flex;
+  background: var(--sidebar);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.rm-tab {
+  padding: 11px 18px;
+  background: transparent; border: none;
+  border-bottom: 2px solid transparent;
+  color: #64748b;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .8rem; font-weight: 600; cursor: pointer;
+  transition: all .14s; position: relative; top: 1px;
+}
+.rm-tab:hover { color: #94a3b8; }
+.rm-tab.active { color: #93c5fd; border-bottom-color: #93c5fd; }
+
+/* Modal body - scrollable */
+.rm-body {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ══ KANBAN ══ */
+.kanban-section { padding: 20px 24px; }
+.kanban-scroll { overflow-x: auto; padding-bottom: 12px; }
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  min-width: 800px;
+  align-items: start;
+}
+.k-col {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: flex; flex-direction: column;
+  min-height: 260px;
+  max-height: 58vh;
+}
+.k-col-head {
+  padding: 11px 13px 9px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 14px 14px 0 0;
+  border-top: 3px solid transparent;
+}
+.k-col-head.col-belirlendi  { border-top-color: #6366f1; }
+.k-col-head.col-analiz      { border-top-color: #f59e0b; }
+.k-col-head.col-onlem       { border-top-color: #10b981; }
+.k-col-head.col-kapandi     { border-top-color: #94a3b8; }
+.k-col-title { display: flex; align-items: center; gap: 7px; }
+.k-col-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.k-col-name { font-weight: 700; font-size: .76rem; color: var(--text); letter-spacing: .1px; }
+.k-col-count {
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 1px 7px;
+  font-size: .65rem; font-weight: 700; color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+}
+.k-cards {
+  flex: 1; overflow-y: auto; padding: 7px;
+  display: flex; flex-direction: column; gap: 0;
+}
+.k-cards::-webkit-scrollbar { width: 2px; }
+.k-cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.k-footer {
+  padding: 5px 7px 7px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+}
+.k-add-btn {
+  width: 100%; background: transparent;
+  border: 1.5px dashed var(--border); border-radius: 7px;
+  padding: 6px; color: var(--text-muted);
+  font-size: .71rem; font-weight: 600; cursor: pointer;
+  transition: all .13s; font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.k-add-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+/* ══ RİSK KARTI ══ */
+.risk-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 12px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: box-shadow .16s ease, transform .14s ease, border-color .14s;
+  position: relative;
+  user-select: none;
+  overflow: hidden;
+}
+.risk-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 10px 0 0 10px;
+}
+.risk-card.sev-critical::before { background: var(--critical); }
+.risk-card.sev-high::before     { background: var(--high); }
+.risk-card.sev-medium::before   { background: var(--medium); }
+.risk-card.sev-low::before      { background: var(--low); }
+.risk-card:last-child { margin-bottom: 0; }
+.risk-card:hover { box-shadow: var(--sh); transform: translateY(-2px); border-color: rgba(59,110,245,.2); }
+.risk-card.dragging { opacity: .3; transform: rotate(1deg) scale(.97); }
+.k-cards.drag-over {
+  background: #eff4ff; border-radius: 8px;
+  outline: 2px dashed var(--accent); outline-offset: -2px;
+}
+.card-name { font-weight: 600; font-size: .82rem; color: var(--text); line-height: 1.35; padding-left: 8px; }
+.card-meta { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding-left: 8px; }
+.card-sev-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: 20px;
+  font-size: .63rem; font-weight: 700; letter-spacing: .1px;
+}
+.card-score { font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 500; color: var(--text-muted); margin-left: auto; }
+.card-owner { font-size: .65rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px; }
+.empty-col {
+  text-align: center; padding: 28px 10px;
+  color: var(--text-muted);
+  border: 1.5px dashed var(--border);
+  border-radius: 8px; margin: 4px;
+  background: var(--surface-3);
+}
+.empty-col .ei { font-size: 1.2rem; opacity: .25; margin-bottom: 5px; }
+.empty-col p { font-size: .68rem; font-weight: 600; }
+
+/* ══ BUTONLAR ══ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .8rem; font-weight: 600;
+  cursor: pointer; border: none;
+  transition: all .14s ease; white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(59,110,245,.28); }
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn-sm { padding: 6px 12px; font-size: .74rem; border-radius: 7px; }
+.btn-danger { background: #fff; color: var(--critical); border: 1.5px solid var(--critical-border); }
+.btn-danger:hover { background: var(--critical-bg); }
+.btn-light { background: var(--surface); color: var(--text-2); border: 1.5px solid var(--border); }
+.btn-light:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+/* ══ DETAY / FORM MODALLARI (iç modal) ══ */
+.inner-modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,20,40,.45); z-index: 1100;
+  backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; padding: 20px;
+  overflow-y: auto;
+}
+.inner-modal-overlay.open { display: flex; }
+.inner-modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; width: 100%; max-width: 680px;
+  box-shadow: var(--sh-lg);
+  animation: mIn .2s ease;
+  max-height: 90vh; overflow-y: auto; overflow-x: hidden;
+}
+.inner-modal-box.wide { max-width: 900px; }
+.modal-head {
+  padding: 16px 20px 13px;
+  border-bottom: 1px solid var(--border-soft);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  position: sticky; top: 0; background: var(--surface); z-index: 2;
+  border-radius: 18px 18px 0 0;
+}
+.modal-title { font-size: 1.05rem; font-weight: 700; flex: 1; color: var(--text); }
+.modal-subtitle { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.modal-close {
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: 50%; width: 28px; height: 28px; cursor: pointer;
+  color: var(--text-muted); font-size: .8rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .13s; flex-shrink: 0;
+}
+.modal-close:hover { background: var(--critical-bg); color: var(--critical); }
+.modal-body { padding: 16px 20px; }
+.modal-footer {
+  padding: 10px 20px 16px;
+  display: flex; justify-content: flex-end; gap: 7px;
+  border-top: 1px solid var(--border-soft); flex-wrap: wrap;
+}
+
+/* Detay içerik */
+.info-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 12px; }
+.info-box { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 9px; padding: 10px 12px; }
+.info-lbl { font-size: .64rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 3px; }
+.info-val { font-weight: 600; font-size: .82rem; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.score-section { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 9px; padding: 12px 14px; margin-bottom: 12px; }
+.score-bar-track { background: var(--surface-3); border-radius: 20px; height: 6px; margin-top: 10px; overflow: hidden; }
+.score-bar-fill  { height: 100%; border-radius: 20px; transition: width .7s cubic-bezier(.4,0,.2,1); }
+.sec-title { font-weight: 700; font-size: .78rem; color: var(--text); margin-bottom: 7px; display: flex; align-items: center; gap: 5px; }
+.divider { border: none; border-top: 1px solid var(--border-soft); margin: 13px 0; }
+.desc-box { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 9px; padding: 11px 13px; color: var(--text-2); font-size: .82rem; line-height: 1.65; }
+.action-list { display: flex; flex-direction: column; gap: 4px; }
+.action-item { display: flex; align-items: flex-start; gap: 8px; background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 8px; padding: 7px 10px; font-size: .81rem; color: var(--text-2); }
+.action-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--low); margin-top: 7px; flex-shrink: 0; }
+.fta-wrap { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; overflow: auto; padding: 14px; text-align: center; }
+
+/* Badge */
+.badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 20px; font-size: .64rem; font-weight: 700; letter-spacing: .1px; white-space: nowrap; }
+.badge-critical { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical-border); }
+.badge-high     { background: var(--high-bg);     color: var(--high);     border: 1px solid var(--high-border); }
+.badge-medium   { background: var(--medium-bg);   color: var(--medium);   border: 1px solid var(--medium-border); }
+.badge-low      { background: var(--low-bg);       color: var(--low);      border: 1px solid var(--low-border); }
+.badge-internal { background: var(--internal-bg); color: var(--internal-color); border: 1px solid var(--internal-border); }
+.badge-external { background: var(--external-bg); color: var(--external-color); border: 1px solid var(--external-border); }
+
+/* Form */
+.form-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1/-1; }
+.form-lbl { font-size: .71rem; font-weight: 700; color: var(--text-2); letter-spacing: .2px; }
+.form-input, .form-select, .form-textarea {
+  background: var(--surface-2); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text); padding: 8px 11px;
+  font-size: .82rem; font-family: 'DM Sans', sans-serif;
+  outline: none; transition: border-color .13s, box-shadow .13s; width: 100%;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,110,245,.1);
+}
+.form-textarea { resize: vertical; min-height: 70px; }
+
+/* Skor soruları */
+.score-questions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+.sq-item { background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 9px; padding: 11px 13px; }
+.sq-q { font-weight: 600; font-size: .8rem; color: var(--text); margin-bottom: 8px; }
+.sq-opts { display: flex; gap: 5px; flex-wrap: wrap; }
+.sq-opt {
+  padding: 4px 11px; border-radius: 20px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  font-size: .72rem; font-weight: 600; cursor: pointer; color: var(--text-2);
+  transition: all .12s; font-family: 'DM Sans', sans-serif;
+}
+.sq-opt:hover { border-color: var(--accent); color: var(--accent); }
+.sq-opt.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+.score-preview { background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 9px; padding: 11px 13px; text-align: center; margin-top: 4px; }
+.score-preview-val { font-family: 'DM Mono', monospace; font-size: 1.4rem; font-weight: 500; }
+.score-preview-lbl { font-size: .69rem; color: var(--text-muted); margin-top: 2px; }
+
+/* FTA editör */
+.fta-tool-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 10px; border-radius: 7px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  font-size: .71rem; font-weight: 600; cursor: pointer;
+  color: var(--text-2); font-family: 'DM Sans', sans-serif;
+  transition: all .13s; white-space: nowrap;
+}
+.fta-tool-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.fta-tool-danger { color: var(--critical); }
+.fta-tool-danger:hover { border-color: var(--critical); background: var(--critical-bg); color: var(--critical); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--text); color: #fff; border-radius: 10px;
+  padding: 10px 16px; font-size: .8rem; font-weight: 600; z-index: 9999;
+  box-shadow: var(--sh-lg);
+  transform: translateY(80px); opacity: 0;
+  transition: all .24s cubic-bezier(.34,1.56,.64,1);
+  display: flex; align-items: center; gap: 6px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+@media (max-width: 768px) {
+  .kpi-mini-row { gap: 5px; }
+  .kpi-mini-chip { min-width: calc(33% - 4px); flex: none; padding: 6px 8px; }
+  .rm-kpi-bar { flex-wrap: wrap; gap: 6px; }
+  .info-grid, .form-grid { grid-template-columns: 1fr; }
+  .form-group.full { grid-column: 1; }
+}
+</style>
+
+<!-- ══ ANA KART YAPISI ══ -->
+<div class="col-md-3">
+  <div class="risk-module-wrapper">
+    <!-- Başlık -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+    <h3 class="mb-1 fw-bold" style="color:#1e293b;">Risk Yönetimi</h3>
+</div>
+    <!-- KPI Mini Chips -->
+    <div class="kpi-mini-row">
+      <div class="kpi-mini-chip">
+        <div class="kpi-mini-num" id="mini-critical" style="color:var(--critical)">0</div>
+        <div class="kpi-mini-lbl">Kritik</div>
+      </div>
+      <div class="kpi-mini-chip">
+        <div class="kpi-mini-num" id="mini-high" style="color:var(--high)">0</div>
+        <div class="kpi-mini-lbl">Yüksek</div>
+      </div>
+      <div class="kpi-mini-chip">
+        <div class="kpi-mini-num" id="mini-medium" style="color:var(--medium)">0</div>
+        <div class="kpi-mini-lbl">Orta</div>
+      </div>
+      <div class="kpi-mini-chip">
+        <div class="kpi-mini-num" id="mini-low" style="color:var(--low)">0</div>
+        <div class="kpi-mini-lbl">Düşük</div>
+      </div>
+      <div class="kpi-mini-chip">
+        <div class="kpi-mini-num" id="mini-total" style="color:var(--accent)">0</div>
+        <div class="kpi-mini-lbl">Toplam</div>
+      </div>
+    </div>
+
+    <!-- Modül Kartı -->
+    <div class="doc-card shadow-sm">
+      <div class="doc-card-body">
+        <div style="width:44px;height:44px;border-radius:12px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px;">
+          <i class="fa-solid fa-diagram-project"></i>
+        </div>
+        <div class="doc-card-title">Risk Analizleri</div>
+        <div class="doc-card-desc">Kurumsal iç ve dış risklerin tespiti, analizi ve izlenmesi</div>
+      </div>
+      <div class="doc-card-footer">
+        <button class="btn-doc" onclick="openRiskModal()">
+          <i class="fa-solid fa-arrow-right-circle"></i> Modülü Aç
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     ANA RİSK MODÜLÜ MODALI
+══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="riskMainModal">
+  <div class="risk-main-modal">
+
+    <!-- Modal Başlık -->
+    <div class="rm-header">
+      <div class="rm-header-left">
+        <div class="rm-header-icon"><i class="fa-solid fa-diagram-project"></i></div>
+        <div>
+          <div class="rm-header-title">Risk <span>Yönetimi</span></div>
+          <div class="rm-header-sub">Kurumsal iç ve dış risk analiz paneli</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-primary btn-sm editor-only" onclick="openAddModal()">
+          <i class="fa-solid fa-plus"></i> Risk Ekle
+        </button>
+        <button class="rm-close" onclick="closeRiskModal()">✕</button>
+      </div>
+    </div>
+
+    <!-- KPI Bar -->
+    <div class="rm-kpi-bar">
+      <div class="rm-kpi-chip">
+        <div class="rm-kpi-num" id="s-critical" style="color:var(--critical)">0</div>
+        <div class="rm-kpi-lbl">Kritik</div>
+      </div>
+      <div class="rm-kpi-chip">
+        <div class="rm-kpi-num" id="s-high" style="color:var(--high)">0</div>
+        <div class="rm-kpi-lbl">Yüksek</div>
+      </div>
+      <div class="rm-kpi-chip">
+        <div class="rm-kpi-num" id="s-medium" style="color:var(--medium)">0</div>
+        <div class="rm-kpi-lbl">Orta</div>
+      </div>
+      <div class="rm-kpi-chip">
+        <div class="rm-kpi-num" id="s-low" style="color:var(--low)">0</div>
+        <div class="rm-kpi-lbl">Düşük</div>
+      </div>
+      <div class="rm-kpi-chip">
+        <div class="rm-kpi-num" id="s-total" style="color:var(--accent)">0</div>
+        <div class="rm-kpi-lbl">Toplam</div>
+      </div>
+      <div class="rm-kpi-chip">
+        <div class="rm-kpi-num" id="s-internal" style="color:var(--internal-color)">0</div>
+        <div class="rm-kpi-lbl">İç Risk</div>
+      </div>
+      <div class="rm-kpi-chip">
+        <div class="rm-kpi-num" id="s-external" style="color:var(--external-color)">0</div>
+        <div class="rm-kpi-lbl">Dış Risk</div>
+      </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="rm-tabs">
+      <button class="rm-tab active" onclick="switchTab('ic',this)">İç Riskler</button>
+      <button class="rm-tab" onclick="switchTab('dis',this)">Dış Riskler</button>
+    </div>
+
+    <!-- İçerik -->
+    <div class="rm-body">
+
+      <!-- Tab: İç Riskler -->
+      <div id="tab-ic" class="tab-content active">
+        <div class="kanban-section">
+          <div style="margin-bottom:12px">
+            <div style="font-size:.9rem;font-weight:700;color:var(--text)">İç Riskler — Kanban Panosu</div>
+            <div style="color:var(--text-muted);font-size:.74rem;margin-top:2px">Kurumun kendi bünyesinden kaynaklanan riskler. Karta tıklayarak detayları inceleyin.</div>
+          </div>
+          <div class="kanban-scroll">
+            <div class="kanban-board" id="boardInternal"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Dış Riskler -->
+      <div id="tab-dis" class="tab-content">
+        <div class="kanban-section">
+          <div style="margin-bottom:12px">
+            <div style="font-size:.9rem;font-weight:700;color:var(--text)">Dış Riskler — Kanban Panosu</div>
+            <div style="color:var(--text-muted);font-size:.74rem;margin-top:2px">Dış çevre ve paydaşlardan kaynaklanan riskler. Karta tıklayarak detayları inceleyin.</div>
+          </div>
+          <div class="kanban-scroll">
+            <div class="kanban-board" id="boardExternal"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /rm-body -->
+  </div><!-- /risk-main-modal -->
+</div><!-- /riskMainModal overlay -->
+
+
+<!-- ══ DETAY MODALI (iç) ══ -->
+<div class="inner-modal-overlay" id="detailModal">
+  <div class="inner-modal-box">
+    <div class="modal-head">
+      <div style="flex:1">
+        <div class="modal-title" id="dm-title">Risk Adı</div>
+        <div class="modal-subtitle" id="dm-badges"></div>
+      </div>
+      <button class="modal-close" onclick="closeInnerModal('detailModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-grid">
+        <div class="info-box"><div class="info-lbl">Şiddet Seviyesi</div><div class="info-val" id="dm-sev">—</div></div>
+        <div class="info-box"><div class="info-lbl">Tür</div><div class="info-val" id="dm-type">—</div></div>
+        <div class="info-box"><div class="info-lbl">Süreç Sahibi</div><div class="info-val" id="dm-owner">—</div></div>
+        <div class="info-box"><div class="info-lbl">Sorumlu Birim</div><div class="info-val" id="dm-unit">—</div></div>
+      </div>
+      <div class="score-section">
+        <div class="info-lbl">Risk Skoru</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+          <div class="info-val" id="dm-score">—</div>
+          <span style="font-size:.7rem;color:var(--text-muted)" id="dm-score-lbl"></span>
+        </div>
+        <div class="score-bar-track"><div class="score-bar-fill" id="dm-score-fill"></div></div>
+      </div>
+      <div class="sec-title">Açıklama</div>
+      <div class="desc-box" id="dm-desc">—</div>
+      <hr class="divider">
+      <div class="sec-title">Alınan / Planlanan Önlemler</div>
+      <div class="action-list" id="dm-actions"></div>
+      <hr class="divider">
+      <div class="sec-title">Hata Ağacı Analizi (FTA)</div>
+      <div class="fta-wrap" id="dmFtaWrap"></div>
+      <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap" id="ftaLegend">
+        <span style="display:flex;align-items:center;gap:5px;font-size:.68rem;color:var(--text-muted)"><span style="width:10px;height:10px;background:#e53e3e;border-radius:2px;display:inline-block"></span>Üst Olay</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:.68rem;color:var(--text-muted)"><span style="width:10px;height:10px;background:#e9d8fd;border:1.5px solid #553c9a;border-radius:50%;display:inline-block"></span>VEYA Kapısı</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:.68rem;color:var(--text-muted)"><span style="width:10px;height:10px;background:#bee3f8;border:1.5px solid #2b6cb0;border-radius:2px;display:inline-block"></span>VE Kapısı</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:.68rem;color:var(--text-muted)"><span style="width:10px;height:10px;background:#f0fff4;border:1.5px solid #38a169;border-radius:50%;display:inline-block"></span>Temel Olay</span>
+      </div>
+    </div>
+    <div class="modal-footer editor-only">
+      <button class="btn btn-light btn-sm" onclick="openFtaEditor()">FTA Düzenle</button>
+      <button class="btn btn-light btn-sm" onclick="openEditFromDetail()">Düzenle</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteFromDetail()">Sil</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FORM MODALI (iç) ══ -->
+<div class="inner-modal-overlay" id="formModal">
+  <div class="inner-modal-box">
+    <div class="modal-head">
+      <div class="modal-title" id="fm-title">Yeni Risk Ekle</div>
+      <button class="modal-close" onclick="closeInnerModal('formModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-lbl">Risk Adı *</label>
+          <input class="form-input" id="f-name" placeholder="Ör: Veri Sızıntısı">
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Tür *</label>
+          <select class="form-select" id="f-type">
+            <option value="internal">İç Risk</option>
+            <option value="external">Dış Risk</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Durum</label>
+          <select class="form-select" id="f-col">
+            <option value="belirlendi">Belirlendi</option>
+            <option value="analiz">Analiz</option>
+            <option value="onlem">Önlem Alındı</option>
+            <option value="kapandi">Kapandı</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Süreç Sahibi</label>
+          <input class="form-input" id="f-owner" placeholder="Ör: Ahmet Yılmaz">
+        </div>
+        <div class="form-group">
+          <label class="form-lbl">Sorumlu Birim</label>
+          <input class="form-input" id="f-unit" placeholder="Ör: BT Departmanı">
+        </div>
+        <div class="form-group full">
+          <label class="form-lbl">Açıklama</label>
+          <textarea class="form-textarea" id="f-desc" placeholder="Risk hakkında açıklama…"></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-lbl">Önlemler (her satır ayrı önlem)</label>
+          <textarea class="form-textarea" id="f-actions" placeholder="Güvenlik duvarı kurulumu&#10;Personel eğitimi"></textarea>
+        </div>
+      </div>
+      <hr class="divider">
+      <div style="font-size:.84rem;font-weight:700;color:var(--text);margin-bottom:11px">Risk Skoru — Değerlendirme Soruları</div>
+      <div class="score-questions">
+        <div class="sq-item">
+          <div class="sq-q">Bu olay daha önce kurumda yaşandı mı?</div>
+          <div class="sq-opts">
+            <button class="sq-opt" data-q="0" data-v="1" onclick="selectOpt(this)">Hiç yaşanmadı</button>
+            <button class="sq-opt" data-q="0" data-v="2" onclick="selectOpt(this)">1–2 kez yaşandı</button>
+            <button class="sq-opt" data-q="0" data-v="4" onclick="selectOpt(this)">Sık sık yaşandı</button>
+          </div>
+        </div>
+        <div class="sq-item">
+          <div class="sq-q">Önümüzdeki 12 ayda gerçekleşme olasılığı nedir?</div>
+          <div class="sq-opts">
+            <button class="sq-opt" data-q="1" data-v="1" onclick="selectOpt(this)">Düşük (&lt;%10)</button>
+            <button class="sq-opt" data-q="1" data-v="3" onclick="selectOpt(this)">Orta (%10–40)</button>
+            <button class="sq-opt" data-q="1" data-v="5" onclick="selectOpt(this)">Yüksek (&gt;%40)</button>
+          </div>
+        </div>
+        <div class="sq-item">
+          <div class="sq-q">Gerçekleşirse kurumun işleyişi ne kadar aksayar?</div>
+          <div class="sq-opts">
+            <button class="sq-opt" data-q="2" data-v="1" onclick="selectOpt(this)">Minimal etki</button>
+            <button class="sq-opt" data-q="2" data-v="3" onclick="selectOpt(this)">Kısmi aksama</button>
+            <button class="sq-opt" data-q="2" data-v="5" onclick="selectOpt(this)">Kritik duruş</button>
+          </div>
+        </div>
+        <div class="sq-item">
+          <div class="sq-q">Yasal / finansal yaptırım riski var mı?</div>
+          <div class="sq-opts">
+            <button class="sq-opt" data-q="3" data-v="0" onclick="selectOpt(this)">Yok</button>
+            <button class="sq-opt" data-q="3" data-v="2" onclick="selectOpt(this)">Olası</button>
+            <button class="sq-opt" data-q="3" data-v="4" onclick="selectOpt(this)">Kesin / ciddi</button>
+          </div>
+        </div>
+        <div class="sq-item">
+          <div class="sq-q">Mevcut kontroller riski ne ölçüde azaltıyor?</div>
+          <div class="sq-opts">
+            <button class="sq-opt" data-q="4" data-v="-3" onclick="selectOpt(this)">Çok etkin</button>
+            <button class="sq-opt" data-q="4" data-v="-1" onclick="selectOpt(this)">Kısmen etkin</button>
+            <button class="sq-opt" data-q="4" data-v="1"  onclick="selectOpt(this)">Yetersiz / yok</button>
+          </div>
+        </div>
+      </div>
+      <div class="score-preview" id="scorePreview">
+        <div class="score-preview-val" id="scoreVal" style="color:var(--text-muted)">—</div>
+        <div class="score-preview-lbl">Otomatik Risk Skoru (soruları yanıtladıkça güncellenir)</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-light" onclick="closeInnerModal('formModal')">Vazgeç</button>
+      <button class="btn btn-primary" onclick="saveRisk()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FTA DÜZENLE MODALI (iç) ══ -->
+<div class="inner-modal-overlay" id="ftaModal">
+  <div class="inner-modal-box wide">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Hata Ağacı Düzenle</div>
+        <div style="color:var(--text-muted);font-size:.72rem;margin-top:2px">Risk: <strong id="fta-risk-name" style="color:var(--text)">—</strong></div>
+      </div>
+      <button class="modal-close" onclick="closeInnerModal('ftaModal')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:12px 16px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:11px;flex-wrap:wrap">
+        <span style="font-size:.66rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px">Seçili düğüme ekle:</span>
+        <button class="fta-tool-btn" onclick="ftaAddChild('or')">+ VEYA Kapısı</button>
+        <button class="fta-tool-btn" onclick="ftaAddChild('and')">+ VE Kapısı</button>
+        <button class="fta-tool-btn" onclick="ftaAddChild('basic')">+ Temel Olay</button>
+        <button class="fta-tool-btn fta-tool-danger" onclick="ftaDeleteSelected()">Sil</button>
+        <div style="margin-left:auto;display:flex;gap:4px">
+          <button class="fta-tool-btn" onclick="ftaZoom(-0.15)">−</button>
+          <button class="fta-tool-btn" onclick="ftaZoom(+0.15)">+</button>
+          <button class="fta-tool-btn" onclick="ftaResetZoom()">Sıfırla</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 240px;gap:10px;align-items:start">
+        <div style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:11px;overflow:auto;padding:14px;min-height:320px;position:relative" id="ftaCanvasWrap">
+          <svg id="ftaEditorSvg" xmlns="http://www.w3.org/2000/svg" style="display:block;cursor:default"></svg>
+          <div id="ftaEmptyHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--text-muted);gap:8px;pointer-events:none">
+            <span style="font-size:1.8rem;opacity:.2">🌳</span>
+            <span style="font-size:.74rem;font-weight:600">Henüz ağaç yok — sağ panelden başlayın</span>
+          </div>
+        </div>
+        <div>
+          <div style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:11px;padding:12px">
+            <div style="font-size:.66rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Düğüm Özellikleri</div>
+            <div id="ftaNodePanel">
+              <div style="color:var(--text-muted);font-size:.74rem;text-align:center;padding:16px 0">Diyagramdan bir düğüme tıklayın</div>
+            </div>
+          </div>
+          <div style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:11px;padding:10px;margin-top:8px">
+            <div style="font-size:.66rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Düğüm Tipleri</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--text-2)"><svg width="26" height="18" style="flex-shrink:0"><rect x="1" y="1" width="24" height="16" rx="3" fill="#e53e3e"/></svg>Üst Olay</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--text-2)"><svg width="26" height="18" style="flex-shrink:0"><ellipse cx="13" cy="9" rx="12" ry="8" fill="#e9d8fd" stroke="#553c9a" stroke-width="1.5"/></svg>VEYA Kapısı</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--text-2)"><svg width="26" height="18" style="flex-shrink:0"><rect x="2" y="2" width="22" height="14" rx="2" fill="#bee3f8" stroke="#2b6cb0" stroke-width="1.5"/></svg>VE Kapısı</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--text-2)"><svg width="26" height="18" style="flex-shrink:0"><circle cx="13" cy="9" r="7" fill="#f0fff4" stroke="#38a169" stroke-width="1.5"/></svg>Temel Olay</div>
+            </div>
+          </div>
+          <div style="margin-top:8px" id="ftaInitPanel">
+            <button class="fta-tool-btn" style="width:100%;justify-content:center;padding:9px" onclick="ftaInitTree()">🌱 Yeni Ağaç Başlat</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-light" onclick="closeInnerModal('ftaModal')">Vazgeç</button>
+      <button class="btn btn-primary" onclick="saveFtaFromEditor()">Ağacı Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const IS_EDITOR = {{ (session.get('rol') == 'editor') | tojson }};
+
+let editingId = null;
+let detailId  = null;
+let scoreAnswers = {};
+
+const COLS = [
+  { id:'belirlendi', label:'Belirlendi',      color:'#6366f1' },
+  { id:'analiz',     label:'Analiz Ediliyor', color:'#f59e0b' },
+  { id:'onlem',      label:'Önlem Alındı',    color:'#10b981' },
+  { id:'kapandi',    label:'Kapandı',         color:'#94a3b8' },
+];
+const SEV_LABELS = { critical:'Kritik', high:'Yüksek', medium:'Orta', low:'Düşük' };
+const SEV_COLORS = {
+  critical: { text:'var(--critical)', bg:'var(--critical-bg)', border:'var(--critical-border)' },
+  high:     { text:'var(--high)',     bg:'var(--high-bg)',     border:'var(--high-border)' },
+  medium:   { text:'var(--medium)',   bg:'var(--medium-bg)',   border:'var(--medium-border)' },
+  low:      { text:'var(--low)',      bg:'var(--low-bg)',      border:'var(--low-border)' },
+};
+const SEV_HEX = { critical:'#e53e3e', high:'#dd6b20', medium:'#d69e2e', low:'#38a169' };
+
+let risks = [
+  { id:1, name:'Veri Sızıntısı',      type:'internal', sev:'critical', score:14, col:'analiz',     owner:'Mehmet Kaya',   unit:'BT Güvenlik',     desc:'Yetkisiz erişim sonucu müşteri ve kurumsal verilerin dışarı çıkması. KVKK kapsamında ciddi yaptırım riski.', actions:['Güvenlik duvarı güncellendi','Personele siber güvenlik eğitimi planlandı','DLP yazılımı değerlendiriliyor'] },
+  { id:2, name:'Personel Devir Hızı', type:'internal', sev:'medium',   score:9,  col:'belirlendi', owner:'Ayşe Çelik',    unit:'İnsan Kaynakları',desc:'Kilit çalışanların ayrılması ile kurumsal bilgi ve deneyimin kaybedilmesi.',                               actions:['İK memnuniyet anketi yapıldı','Kariyer yol haritası hazırlanıyor'] },
+  { id:3, name:'Yasal Uyumsuzluk',    type:'internal', sev:'high',     score:11, col:'belirlendi', owner:'Zeynep Arslan', unit:'Hukuk & Uyum',    desc:'KVKK / GDPR gerekliliklerinin karşılanmaması veya yeni yönetmeliklere geç uyum.',                          actions:['Hukuk danışmanlığı alındı'] },
+  { id:4, name:'Yangın Riski',        type:'internal', sev:'high',     score:6,  col:'kapandi',    owner:'Can Öztürk',    unit:'Tesis Yönetimi',  desc:'Elektrik arızası veya ihmalden kaynaklanan yangın.',                                                         actions:['Yangın söndürme yenilendi','Tahliye tatbikatı yapıldı','Sigorta güncellendi'] },
+  { id:5, name:'Tedarikçi İflası',    type:'external', sev:'high',     score:12, col:'belirlendi', owner:'Fatma Demir',   unit:'Satın Alma',      desc:'Ana tedarikçinin mali güçlük yaşayarak üretim sürecini sekteye uğratması.',                                   actions:['Alternatif tedarikçi listesi oluşturuluyor'] },
+  { id:6, name:'Siber Saldırı',       type:'external', sev:'critical', score:17, col:'onlem',      owner:'Ali Yıldız',    unit:'BT Altyapı',      desc:'Fidye yazılımı (ransomware) veya DDoS ile sistemlerin çevrimdışı kalması.',                                  actions:['Next-gen firewall kuruldu','SOC hizmeti aktif','Olay müdahale planı hazırlandı'] },
+  { id:7, name:'Döviz Kuru Riski',    type:'external', sev:'medium',   score:8,  col:'analiz',     owner:'Burak Şahin',   unit:'Finans',          desc:'Dolar/Euro kurundaki yükseliş; ithalat maliyetleri ve bütçe dengelerini bozabilir.',                          actions:['Kur riskine karşı hedging değerlendiriliyor'] },
+];
+
+let ftaTrees = {
+  1: { label:'Veri Sızıntısı', type:'top', children:[
+    { label:'VEYA', type:'or', children:[
+      { label:'Yetkisiz Erişim', type:'and', children:[
+        { label:'Zayıf Parola', type:'basic'},
+        { label:'2FA Eksikliği', type:'basic'}
+      ]},
+      { label:'Sosyal Mühendislik', type:'basic'},
+      { label:'Yazılım Açığı', type:'basic'}
+    ]}
+  ]},
+  4: { label:'Yangın Riski', type:'top', children:[
+    { label:'VEYA', type:'or', children:[
+      { label:'Elektrik Arızası', type:'and', children:[
+        { label:'Eski Kablolama', type:'basic'},
+        { label:'Koruma Eksik', type:'basic'}
+      ]},
+      { label:'İnsan İhmali', type:'basic'}
+    ]}
+  ]},
+  6: { label:'Siber Saldırı', type:'top', children:[
+    { label:'VEYA', type:'or', children:[
+      { label:'Fidye Yazılımı', type:'and', children:[
+        { label:'Phishing', type:'basic'},
+        { label:'Patch Eksikliği', type:'basic'}
+      ]},
+      { label:'DDoS Saldırısı', type:'and', children:[
+        { label:'Botnet', type:'basic'},
+        { label:'Güvenlik Duvarı Yok', type:'basic'}
+      ]}
+    ]}
+  ]},
+};
+
+const $ = id => document.getElementById(id);
+
+/* ══ MODAL AÇ / KAPAT ══ */
+function openRiskModal() {
+  $('riskMainModal').classList.add('open');
+  renderAll();
+}
+function closeRiskModal() {
+  $('riskMainModal').classList.remove('open');
+}
+function openInnerModal(id)  { $(id).classList.add('open'); }
+function closeInnerModal(id) { $(id).classList.remove('open'); }
+
+/* ══ İSTATİSTİK ══ */
+function updateStats() {
+  const counts = { critical:0, high:0, medium:0, low:0 };
+  risks.forEach(r => { if(counts[r.sev] !== undefined) counts[r.sev]++; });
+
+  // Modal KPI bar
+  ['critical','high','medium','low'].forEach(s => {
+    const el = $('s-'+s); if(el) el.textContent = counts[s];
+  });
+  const st = $('s-total');    if(st) st.textContent = risks.length;
+  const si = $('s-internal'); if(si) si.textContent = risks.filter(r => r.type === 'internal').length;
+  const se = $('s-external'); if(se) se.textContent = risks.filter(r => r.type === 'external').length;
+
+  // Mini chips (kart üstü)
+  ['critical','high','medium','low'].forEach(s => {
+    const el = $('mini-'+s); if(el) el.textContent = counts[s];
+  });
+  const mt = $('mini-total'); if(mt) mt.textContent = risks.length;
+}
+
+/* ══ TAB ══ */
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.rm-tab').forEach(t => t.classList.remove('active'));
+  $('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ══ SKOR ══ */
+function scoreColor(sc) {
+  if(sc >= 16) return SEV_HEX.critical;
+  if(sc >= 10) return SEV_HEX.high;
+  if(sc >= 5)  return SEV_HEX.medium;
+  return SEV_HEX.low;
+}
+function scoreLabel(sc) {
+  if(sc >= 16) return 'Kritik';
+  if(sc >= 10) return 'Yüksek';
+  if(sc >= 5)  return 'Orta';
+  return 'Düşük';
+}
+function scoreSev(sc) {
+  if(sc >= 16) return 'critical';
+  if(sc >= 10) return 'high';
+  if(sc >= 5)  return 'medium';
+  return 'low';
+}
+
+/* ══ KANBAN RENDER ══ */
+function renderBoard(boardId, type) {
+  const board = $(boardId);
+  if(!board) return;
+  board.innerHTML = '';
+  COLS.forEach(col => {
+    const cards = risks.filter(r => r.type === type && r.col === col.id);
+    const colEl = document.createElement('div');
+    colEl.className = 'k-col';
+    colEl.innerHTML = `
+      <div class="k-col-head col-${col.id}">
+        <div class="k-col-title">
+          <span class="k-col-dot" style="background:${col.color}"></span>
+          <span class="k-col-name">${col.label}</span>
+        </div>
+        <span class="k-col-count">${cards.length}</span>
+      </div>
+      <div class="k-cards" id="${boardId}-col-${col.id}"
+           ondragover="dragOver(event)"
+           ondrop="drop(event,'${col.id}','${type}')"
+           ondragleave="dragLeave(event)">
+        ${cards.length === 0
+          ? '<div class="empty-col"><div class="ei">📭</div><p>Bu sütunda risk yok</p></div>'
+          : cards.map(r => cardHTML(r)).join('')}
+      </div>
+      ${IS_EDITOR ? `<div class="k-footer"><button class="k-add-btn" onclick="openAddModal('${col.id}','${type}')">+ Risk Ekle</button></div>` : ''}
+    `;
+    board.appendChild(colEl);
+  });
+}
+
+function renderAll() {
+  renderBoard('boardInternal','internal');
+  renderBoard('boardExternal','external');
+  updateStats();
+}
+
+/* ══ KART HTML ══ */
+function cardHTML(r) {
+  const hex = SEV_HEX[r.sev] || '#94a3b8';
+  const sev = SEV_LABELS[r.sev] || r.sev;
+  const sc  = r.score || 0;
+  const sevColors = SEV_COLORS[r.sev] || {};
+  return `
+    <div class="risk-card sev-${r.sev}" id="card-${r.id}"
+         draggable="${IS_EDITOR}"
+         onclick="openDetail(${r.id})"
+         ondragstart="dragStart(event,${r.id})"
+         ondragend="dragEnd(event)">
+      <div class="card-name">${r.name}</div>
+      <div class="card-meta">
+        <span class="card-sev-badge" style="background:${sevColors.bg};color:${sevColors.text};border:1px solid ${sevColors.border}">
+          <span style="width:5px;height:5px;border-radius:50%;background:${hex};display:inline-block"></span>
+          ${sev}
+        </span>
+        <span class="card-owner">${r.owner || ''}</span>
+        <span class="card-score" style="color:${hex}">${sc}/20</span>
+      </div>
+    </div>`;
+}
+
+/* ══ DRAG & DROP ══ */
+let dragId = null;
+function dragStart(e, id) { dragId = id; setTimeout(()=>{ const el=$('card-'+id); if(el) el.classList.add('dragging'); },0); }
+function dragEnd(e)        { if(dragId){ const el=$('card-'+dragId); if(el) el.classList.remove('dragging'); } }
+function dragOver(e)       { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function dragLeave(e)      { e.currentTarget.classList.remove('drag-over'); }
+function drop(e, colId, type) {
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  if(!dragId || !IS_EDITOR) return;
+  const r = risks.find(r => r.id === dragId);
+  if(r && r.col !== colId) {
+    r.col = colId;
+    renderAll();
+    toast('"'+r.name+'" → '+COLS.find(c=>c.id===colId).label);
+  }
+  dragId = null;
+}
+
+/* ══ DETAY MODALI ══ */
+function openDetail(id) {
+  detailId = id;
+  const r = risks.find(r => r.id === id);
+  if(!r) return;
+  const sc  = r.score || 0;
+  const pct = Math.min(Math.round((sc/20)*100), 100);
+  const col = scoreColor(sc);
+
+  $('dm-title').textContent = r.name;
+  $('dm-badges').innerHTML = `
+    <span class="badge badge-${r.sev}">${SEV_LABELS[r.sev]}</span>
+    <span class="badge ${r.type==='internal'?'badge-internal':'badge-external'}">${r.type==='internal'?'İç Risk':'Dış Risk'}</span>
+    <span style="color:var(--text-muted);font-size:.7rem">${COLS.find(c=>c.id===r.col)?.label||''}</span>`;
+  $('dm-sev').innerHTML  = `<span class="badge badge-${r.sev}">${SEV_LABELS[r.sev]}</span>`;
+  $('dm-type').innerHTML = `<span class="badge ${r.type==='internal'?'badge-internal':'badge-external'}">${r.type==='internal'?'İç Risk':'Dış Risk'}</span>`;
+  $('dm-owner').textContent = r.owner || '—';
+  $('dm-unit').textContent  = r.unit  || '—';
+  $('dm-score').innerHTML   = `<strong style="font-size:1.3rem;font-family:'DM Mono',monospace;color:${col}">${sc}</strong><span style="color:var(--text-muted);font-size:.76rem"> / 20</span>`;
+  $('dm-score-lbl').textContent = scoreLabel(sc);
+  const fill = $('dm-score-fill');
+  fill.style.background = col; fill.style.width = '0%';
+  setTimeout(()=>fill.style.width = pct+'%', 50);
+
+  $('dm-desc').textContent = r.desc || 'Açıklama girilmemiş.';
+  $('dm-actions').innerHTML = (r.actions && r.actions.length)
+    ? r.actions.map(a=>`<div class="action-item"><span class="action-dot"></span><span>${a}</span></div>`).join('')
+    : '<div class="action-item"><span class="action-dot" style="background:var(--text-muted)"></span><span style="color:var(--text-muted)">Henüz önlem eklenmemiş.</span></div>';
+
+  const wrap = $('dmFtaWrap');
+  if(ftaTrees[id]) {
+    wrap.innerHTML = '<svg id="dmFtaSvg" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto"></svg>';
+    drawFTA($('dmFtaSvg'), ftaTrees[id], true);
+  } else {
+    wrap.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:.78rem">Hata ağacı henüz tanımlanmamış.'+(IS_EDITOR?' "FTA Düzenle" ile ekleyebilirsiniz.':'')+'</div>';
+  }
+  openInnerModal('detailModal');
+}
+
+function openEditFromDetail() { closeInnerModal('detailModal'); openEditModal(detailId); }
+function deleteFromDetail() {
+  const r = risks.find(r => r.id === detailId);
+  if(!r || !confirm('"'+r.name+'" silinsin mi?')) return;
+  risks = risks.filter(r => r.id !== detailId);
+  delete ftaTrees[detailId];
+  closeInnerModal('detailModal');
+  renderAll();
+  toast('Risk silindi');
+}
+
+/* ══ FORM ══ */
+function openAddModal(colId='belirlendi', type='internal') {
+  editingId = null; scoreAnswers = {};
+  $('fm-title').textContent = 'Yeni Risk Ekle';
+  ['f-name','f-desc','f-owner','f-unit','f-actions'].forEach(id => $(id).value = '');
+  $('f-type').value = type;
+  $('f-col').value  = colId;
+  document.querySelectorAll('.sq-opt').forEach(b => b.classList.remove('selected'));
+  updateScorePreview();
+  openInnerModal('formModal');
+}
+function openEditModal(id) {
+  const r = risks.find(r => r.id === id);
+  if(!r) return;
+  editingId = id; scoreAnswers = {};
+  $('fm-title').textContent = 'Riski Düzenle';
+  $('f-name').value  = r.name;       $('f-desc').value    = r.desc||'';
+  $('f-type').value  = r.type;       $('f-col').value     = r.col;
+  $('f-owner').value = r.owner||'';  $('f-unit').value    = r.unit||'';
+  $('f-actions').value = (r.actions||[]).join('\n');
+  document.querySelectorAll('.sq-opt').forEach(b => b.classList.remove('selected'));
+  updateScorePreview();
+  openInnerModal('formModal');
+}
+function saveRisk() {
+  const name = $('f-name').value.trim();
+  if(!name) { alert('Risk adı zorunludur!'); return; }
+  const actions = $('f-actions').value.split('\n').map(s=>s.trim()).filter(s=>s);
+  const sc = calcScore();
+  const data = {
+    name, desc: $('f-desc').value.trim(), type: $('f-type').value,
+    sev: scoreSev(sc), score: sc, col: $('f-col').value,
+    owner: $('f-owner').value.trim(), unit: $('f-unit').value.trim(), actions,
+  };
+  if(editingId) {
+    Object.assign(risks.find(r => r.id === editingId), data);
+    toast('Risk güncellendi');
+  } else {
+    data.id = Date.now();
+    risks.push(data);
+    toast('Yeni risk eklendi');
+  }
+  closeInnerModal('formModal');
+  renderAll();
+}
+
+/* ══ SKOR ══ */
+function selectOpt(btn) {
+  const q = btn.dataset.q;
+  const v = parseInt(btn.dataset.v);
+  document.querySelectorAll('.sq-opt[data-q="'+q+'"]').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  scoreAnswers[q] = v;
+  updateScorePreview();
+}
+function calcScore() {
+  const s = Object.values(scoreAnswers).reduce((a,b) => a+b, 0);
+  return Math.max(0, Math.min(20, s));
+}
+function updateScorePreview() {
+  const answered = Object.keys(scoreAnswers).length;
+  const el = $('scoreVal');
+  if(answered === 0) { el.textContent = '—'; el.style.color = 'var(--text-muted)'; return; }
+  const sc = calcScore();
+  el.textContent = sc;
+  el.style.color = scoreColor(sc);
+}
+
+/* ══ FTA ENGINE ══ */
+const FTA_STYLE = {
+  top:   { fill:'#e53e3e', stroke:'#c53030', textFill:'#fff',    shape:'rect' },
+  or:    { fill:'#faf5ff', stroke:'#553c9a', textFill:'#44337a', shape:'ellipse' },
+  and:   { fill:'#ebf8ff', stroke:'#2b6cb0', textFill:'#2c5282', shape:'rect' },
+  basic: { fill:'#f0fff4', stroke:'#38a169', textFill:'#22543d', shape:'circle' },
+};
+
+function nodeSize(type) {
+  if(type === 'basic') return { w:80, h:80 };
+  if(type === 'top')   return { w:140, h:44 };
+  if(type === 'or')    return { w:120, h:44 };
+  return { w:120, h:40 };
+}
+function truncLabel(s, max=14) { return s.length > max ? s.slice(0,max-1)+'…' : s; }
+
+function ftaMeasurePlace(node) {
+  const GAP_X = 18, GAP_Y = 72;
+  function measure(n) {
+    const sz = nodeSize(n.type);
+    if(!n.children || !n.children.length) return { node:n, w:sz.w };
+    const ch = n.children.map(measure);
+    const tw = ch.reduce((s,c) => s+c.w, 0) + GAP_X*(ch.length-1);
+    return { node:n, w:Math.max(sz.w, tw), children:ch };
+  }
+  function place(layout, x, y) {
+    const sz = nodeSize(layout.node.type);
+    layout.x = x + (layout.w - sz.w)/2;
+    layout.y = y;
+    layout.w_actual = sz.w;
+    layout.h_actual = sz.h;
+    if(layout.children) {
+      let cx = x;
+      layout.children.forEach(child => { place(child, cx, y + sz.h + GAP_Y); cx += child.w + GAP_X; });
+    }
+  }
+  const root = measure(node);
+  place(root, 20, 20);
+  return root;
+}
+
+function drawFtaNode(svg, layout, parent, selectedPath, ns, onSelect) {
+  const t = layout.node.type;
+  const st = FTA_STYLE[t] || FTA_STYLE.basic;
+  const x = layout.x, y = layout.y;
+  const w = layout.w_actual, h = layout.h_actual;
+  const cx = x + w/2, cy = y + h/2;
+  const isSelected = selectedPath && JSON.stringify(layout.path) === JSON.stringify(selectedPath);
+
+  if(parent) {
+    const pw = parent.w_actual, ph = parent.h_actual;
+    const pcx = parent.x + pw/2;
+    const pbot = parent.y + ph;
+    const mid  = (pbot + y) / 2;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','path');
+    line.setAttribute('d', `M${pcx},${pbot} C${pcx},${mid} ${cx},${mid} ${cx},${y}`);
+    line.setAttribute('fill','none'); line.setAttribute('stroke','#a0aec0'); line.setAttribute('stroke-width','1.2');
+    svg.appendChild(line);
+  }
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.style.cursor = 'pointer';
+  if(onSelect) g.addEventListener('click', e => { e.stopPropagation(); onSelect(layout.path); });
+
+  if(isSelected) {
+    if(t === 'basic') {
+      const hl = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      hl.setAttribute('cx', cx); hl.setAttribute('cy', cy); hl.setAttribute('r', w/2+5);
+      hl.setAttribute('fill','none'); hl.setAttribute('stroke','#3b6ef5'); hl.setAttribute('stroke-width','2.5'); hl.setAttribute('stroke-dasharray','4 3');
+      g.appendChild(hl);
+    } else if(t === 'or') {
+      const hlE = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+      hlE.setAttribute('cx', cx); hlE.setAttribute('cy', cy); hlE.setAttribute('rx', w/2+5); hlE.setAttribute('ry', h/2+5);
+      hlE.setAttribute('fill','none'); hlE.setAttribute('stroke','#3b6ef5'); hlE.setAttribute('stroke-width','2.5'); hlE.setAttribute('stroke-dasharray','4 3');
+      g.appendChild(hlE);
+    } else {
+      const hl = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      hl.setAttribute('x', x-5); hl.setAttribute('y', y-5); hl.setAttribute('width', w+10); hl.setAttribute('height', h+10); hl.setAttribute('rx','6');
+      hl.setAttribute('fill','none'); hl.setAttribute('stroke','#3b6ef5'); hl.setAttribute('stroke-width','2.5'); hl.setAttribute('stroke-dasharray','4 3');
+      g.appendChild(hl);
+    }
+  }
+
+  if(t === 'basic') {
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', w/2);
+    c.setAttribute('fill', st.fill); c.setAttribute('stroke', st.stroke); c.setAttribute('stroke-width','1.5');
+    g.appendChild(c);
+  } else if(t === 'or') {
+    const e = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    e.setAttribute('cx', cx); e.setAttribute('cy', cy); e.setAttribute('rx', w/2); e.setAttribute('ry', h/2);
+    e.setAttribute('fill', st.fill); e.setAttribute('stroke', st.stroke); e.setAttribute('stroke-width','1.5');
+    g.appendChild(e);
+  } else {
+    const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', w); r.setAttribute('height', h); r.setAttribute('rx','6');
+    r.setAttribute('fill', st.fill); r.setAttribute('stroke', st.stroke); r.setAttribute('stroke-width','1.5');
+    g.appendChild(r);
+  }
+
+  const words = layout.node.label.split(' ');
+  let lines = [];
+  if(words.length <= 2) { lines = [words.join(' ')]; }
+  else { const m=Math.ceil(words.length/2); lines=[words.slice(0,m).join(' '), words.slice(m).join(' ')]; }
+  lines.forEach((line, i) => {
+    const te = document.createElementNS('http://www.w3.org/2000/svg','text');
+    te.setAttribute('x', cx);
+    const lh = 13; const totalH = lines.length * lh;
+    te.setAttribute('y', cy - totalH/2 + lh*i + (t==='or'?1:0) + 5);
+    te.setAttribute('text-anchor','middle'); te.setAttribute('fill', st.textFill);
+    te.setAttribute('font-size','11'); te.setAttribute('font-weight', t==='top'?'700':'600');
+    te.setAttribute('font-family','DM Sans, system-ui, sans-serif');
+    te.textContent = truncLabel(line, t==='basic' ? 9 : 14);
+    g.appendChild(te);
+  });
+
+  svg.appendChild(g);
+  if(layout.children) layout.children.forEach(child => drawFtaNode(svg, child, layout, selectedPath, ns, onSelect));
+}
+
+function ftaTreeBounds(layout) {
+  let maxX = 0, maxY = 0;
+  function walk(n) {
+    const rx = n.x + n.w_actual; const ry = n.y + n.h_actual;
+    if(rx > maxX) maxX = rx; if(ry > maxY) maxY = ry;
+    if(n.children) n.children.forEach(walk);
+  }
+  walk(layout);
+  return { maxX, maxY };
+}
+
+function assignPaths(layout, path) {
+  layout.path = path;
+  if(layout.children) layout.children.forEach((c,i) => assignPaths(c, [...path, i]));
+}
+
+function drawFTA(svg, tree, compact=false) {
+  const layout = ftaMeasurePlace(tree);
+  assignPaths(layout, []);
+  const { maxX, maxY } = ftaTreeBounds(layout);
+  const PAD = 24;
+  svg.setAttribute('viewBox', `0 0 ${maxX+PAD} ${maxY+PAD}`);
+  svg.setAttribute('width', maxX+PAD); svg.setAttribute('height', maxY+PAD);
+  svg.style.maxWidth = '100%';
+  drawFtaNode(svg, layout, null, null, null, null);
+}
+
+/* ══ FTA EDİTÖR ══ */
+let ftaTree = null, ftaSelectedPath = null, ftaScale = 1;
+
+function openFtaEditor() {
+  const r = risks.find(r => r.id === detailId);
+  $('fta-risk-name').textContent = r ? r.name : '—';
+  ftaTree = (detailId && ftaTrees[detailId]) ? JSON.parse(JSON.stringify(ftaTrees[detailId])) : null;
+  ftaSelectedPath = null; ftaScale = 1;
+  closeInnerModal('detailModal');
+  openInnerModal('ftaModal');
+  setTimeout(() => ftaRenderEditor(), 80);
+}
+
+function ftaInitTree() {
+  const r = risks.find(r => r.id === detailId);
+  ftaTree = {
+    label: r?.name || 'Üst Olay', type: 'top',
+    children: [{ label:'VEYA', type:'or', children:[
+      { label:'Neden 1', type:'basic' }, { label:'Neden 2', type:'basic' }
+    ]}]
+  };
+  ftaSelectedPath = null; ftaRenderEditor();
+}
+
+function ftaGetNode(path) { let node = ftaTree; for(const idx of path) node = node.children[idx]; return node; }
+
+function ftaRenderEditor() {
+  const svg = $('ftaEditorSvg');
+  const hint = $('ftaEmptyHint');
+  const initP = $('ftaInitPanel');
+  svg.innerHTML = '';
+  if(!ftaTree) { hint.style.display='flex'; initP.style.display='block'; $('ftaNodePanel').innerHTML='<div style="color:var(--text-muted);font-size:.74rem;text-align:center;padding:16px 0">Diyagramdan bir düğüme tıklayın</div>'; return; }
+  hint.style.display='none'; initP.style.display='none';
+  const layout = ftaMeasurePlace(ftaTree);
+  assignPaths(layout, []);
+  const { maxX, maxY } = ftaTreeBounds(layout);
+  const PAD = 28;
+  svg.setAttribute('viewBox', `0 0 ${maxX+PAD} ${maxY+PAD}`);
+  svg.setAttribute('width', (maxX+PAD)*ftaScale);
+  svg.setAttribute('height', (maxY+PAD)*ftaScale);
+  drawFtaNode(svg, layout, null, ftaSelectedPath, null, (path) => ftaSelectNode(path));
+  ftaUpdateNodePanel();
+}
+
+function ftaSelectNode(path) { ftaSelectedPath = path; ftaRenderEditor(); }
+
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function ftaUpdateNodePanel() {
+  const panel = $('ftaNodePanel');
+  if(!ftaSelectedPath || !ftaTree) { panel.innerHTML='<div style="color:var(--text-muted);font-size:.74rem;text-align:center;padding:16px 0">Diyagramdan bir düğüme tıklayın</div>'; return; }
+  const node = ftaGetNode(ftaSelectedPath);
+  const isRoot = ftaSelectedPath.length === 0;
+  panel.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <div><div class="form-lbl" style="margin-bottom:4px">Etiket</div>
+        <input class="form-input" id="ftaNodeLabel" value="${escHtml(node.label)}" oninput="ftaUpdateLabel(this.value)" style="font-size:.78rem;padding:6px 10px">
+      </div>
+      <div><div class="form-lbl" style="margin-bottom:4px">Tip</div>
+        <select class="form-select" id="ftaNodeType" onchange="ftaUpdateType(this.value)" style="font-size:.78rem;padding:6px 10px" ${isRoot?'disabled':''}>
+          <option value="top"   ${node.type==='top'  ?'selected':''}>Üst Olay</option>
+          <option value="or"    ${node.type==='or'   ?'selected':''}>VEYA Kapısı</option>
+          <option value="and"   ${node.type==='and'  ?'selected':''}>VE Kapısı</option>
+          <option value="basic" ${node.type==='basic'?'selected':''}>Temel Olay</option>
+        </select>
+      </div>
+      ${!isRoot ? `<button class="fta-tool-btn fta-tool-danger" onclick="ftaDeleteSelected()" style="justify-content:center">Düğümü Sil</button>` : ''}
+    </div>`;
+}
+
+function ftaUpdateLabel(val) {
+  if(!ftaSelectedPath || !ftaTree) return;
+  ftaGetNode(ftaSelectedPath).label = val;
+  ftaRenderEditor();
+  setTimeout(() => { const el=$('ftaNodeLabel'); if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);} },0);
+}
+function ftaUpdateType(val) {
+  if(!ftaSelectedPath || !ftaTree) return;
+  const node = ftaGetNode(ftaSelectedPath);
+  node.type = val;
+  if(val === 'basic') delete node.children;
+  ftaRenderEditor();
+}
+function ftaAddChild(type) {
+  if(!ftaTree) { toast('Önce ağaç başlatın'); return; }
+  const path = ftaSelectedPath || [];
+  const node = ftaGetNode(path);
+  if(node.type === 'basic') { toast('Temel olaya alt düğüm eklenemez'); return; }
+  if(!node.children) node.children = [];
+  const labels = { or:'VEYA', and:'VE', basic:'Yeni Olay' };
+  node.children.push({ label: labels[type]||type, type });
+  ftaRenderEditor(); toast('Düğüm eklendi');
+}
+function ftaDeleteSelected() {
+  if(!ftaSelectedPath || !ftaTree) { toast('Önce bir düğüm seçin'); return; }
+  if(ftaSelectedPath.length === 0) { toast('Kök düğüm silinemez'); return; }
+  const parentPath = ftaSelectedPath.slice(0,-1);
+  const idx = ftaSelectedPath[ftaSelectedPath.length-1];
+  const parent = ftaGetNode(parentPath);
+  parent.children.splice(idx, 1);
+  if(!parent.children.length) delete parent.children;
+  ftaSelectedPath = null; ftaRenderEditor(); toast('Düğüm silindi');
+}
+function ftaZoom(delta) { ftaScale = Math.max(0.4, Math.min(2, ftaScale+delta)); ftaRenderEditor(); }
+function ftaResetZoom() { ftaScale = 1; ftaRenderEditor(); }
+
+function saveFtaFromEditor() {
+  if(!ftaTree) { alert('Kaydedilecek ağaç yok.'); return; }
+  if(!detailId) { alert('Önce bir risk detayından açın.'); return; }
+  ftaTrees[detailId] = JSON.parse(JSON.stringify(ftaTree));
+  closeInnerModal('ftaModal');
+  openDetail(detailId);
+  toast('Hata ağacı kaydedildi');
+}
+
+/* ══ TOAST ══ */
+function toast(msg, dur=2600) {
+  const el = $('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+/* Klavye kapat */
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') {
+    ['detailModal','formModal','ftaModal'].forEach(closeInnerModal);
+    closeRiskModal();
+  }
+});
+
+/* Overlay tıklama */
+$('riskMainModal').addEventListener('click', e => { if(e.target === $('riskMainModal')) closeRiskModal(); });
+['detailModal','formModal','ftaModal'].forEach(id => {
+  $(id).addEventListener('click', e => { if(e.target === $(id)) closeInnerModal(id); });
+});
+
+/* Sayfa yüklenince mini KPI'ları güncelle */
+updateStats();
+</script>
+{% endblock %}

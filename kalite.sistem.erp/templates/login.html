@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Kalite Yönetim Sistemi</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+    font-family:'Inter',sans-serif;
+}
+
+body{
+    margin:0;
+    height:100vh;
+    overflow:hidden;
+}
+
+/* ANA YAPI */
+.login-container{
+    display:flex;
+    height:100vh;
+}
+
+/* SOL ALAN */
+.left-side{
+    flex:1;
+
+    position:relative;
+
+    background:
+        linear-gradient(
+            rgba(15,23,42,0.75),
+            rgba(15,23,42,0.8)
+        ),
+
+        url('https://www.grinstyrail.co.uk/wp-content/uploads/2021/03/graph-and-line-chart-printed-paper-stockpack-pexels-scaled.jpg');
+
+    background-size:cover;
+    background-position:center;
+
+    color:white;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    padding:60px;
+}
+
+.left-content{
+    max-width:500px;
+}
+
+.system-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+
+    padding:10px 18px;
+
+    background:rgba(255,255,255,0.12);
+
+    border:1px solid rgba(255,255,255,0.18);
+
+    border-radius:50px;
+
+    margin-bottom:30px;
+
+    backdrop-filter:blur(10px);
+}
+
+.main-title{
+    font-size:54px;
+    font-weight:700;
+    line-height:1.1;
+
+    margin-bottom:25px;
+}
+
+.main-desc{
+    font-size:18px;
+    line-height:1.8;
+
+    color:rgba(255,255,255,0.82);
+
+    margin-bottom:40px;
+}
+
+.feature-list{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
+
+.feature-item{
+    display:flex;
+    align-items:center;
+    gap:15px;
+
+    font-size:16px;
+}
+
+.feature-icon{
+    width:45px;
+    height:45px;
+
+    border-radius:12px;
+
+    background:rgba(255,255,255,0.12);
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:20px;
+}
+
+/* SAĞ ALAN */
+.right-side{
+    width:600px;
+
+    background:#f8fafc;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    padding:40px;
+}
+
+.login-box{
+    width:100%;
+    max-width:340px;
+}
+
+.logo-box{
+    width:80px;
+    height:80px;
+
+    border-radius:20px;
+
+    background:linear-gradient(135deg,#2563eb,#1d4ed8);
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    color:white;
+
+    font-size:35px;
+
+    margin-bottom:25px;
+}
+
+.login-title{
+    font-size:30px;
+    font-weight:700;
+    color:#0f172a;
+}
+
+.login-subtitle{
+    color:#64748b;
+
+    margin-bottom:35px;
+}
+
+.form-label{
+    font-weight:600;
+    color:#334155;
+    margin-bottom:8px;
+}
+
+.form-control{
+    height:52px;
+
+    border-radius:14px;
+
+    border:1px solid #dbe2ea;
+}
+
+.form-control:focus{
+    border-color:#2563eb;
+
+    box-shadow:
+        0 0 0 4px rgba(37,99,235,0.12);
+}
+
+.btn-login{
+    border-radius:8px;
+    background:#1d4ed8;
+    font-weight:600;
+}
+
+.btn-login:hover{
+    transform:translateY(-2px);
+}
+
+.quick-btn{
+    height:54px;
+
+    border-radius:14px;
+
+    font-weight:600;
+}
+
+/* MOBİL */
+@media(max-width:992px){
+
+    .left-side{
+        display:none;
+    }
+
+    .right-side{
+        width:100%;
+    }
+
+}
+
+</style>
+</head>
+<body>
+
+<div class="login-container">
+
+    <!-- SOL -->
+    <div class="left-side">
+
+        <div class="left-content">
+
+            <div class="system-badge">
+                <i class="bi bi-shield-check"></i>
+                ISO 9001 Uyumlu Yönetim Sistemi
+            </div>
+
+            <div class="main-title">
+                Kalite Süreçlerinizi
+                Tek Platformdan Yönetin
+            </div>
+
+            <div class="main-desc">
+                Doküman yönetimi, uygunsuzluk,denetim,
+                düzeltici faaliyetlerin takibini,risk
+                ve süreç yönetimini merkezi olarak yönetin.
+            </div>
+
+            <div class="feature-list">
+
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-kanban"></i>
+                    </div>
+
+                    Süreç ve risk yönetimi
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+
+                    Doküman ve revizyon takibi
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+
+                    Faaliyet Yönetimleri
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- SAĞ -->
+    <div class="right-side">
+
+        <div class="login-box">
+
+            <div class="logo-box">
+                <i class="bi bi-buildings"></i>
+            </div>
+
+            <div class="login-title">
+                Giriş Yap
+            </div>
+
+            <div class="login-subtitle">
+                Kalite Yönetim Sistemi Paneli
+            </div>
+
+            <div id="choiceArea">
+
+                <button onclick="showLoginForm()"
+                class="btn btn-primary btn-login w-100 mb-3">
+
+                    <i class="bi bi-person-lock me-2"></i>
+                    Düzenleyici Girişi
+
+                </button>
+
+                <form action="/login" method="post">
+
+                    <input type="hidden"
+                    name="rol"
+                    value="izleyici">
+
+                    <button type="submit"
+                    class="btn btn-outline-secondary quick-btn w-100">
+
+                        <i class="bi bi-eye me-2"></i>
+                        Görüntüleyici Girişi
+
+                    </button>
+
+                </form>
+
+            </div>
+
+            <div id="loginForm" style="display:none;">
+
+                <form action="/login" method="post">
+
+                    <input type="hidden" name="rol" value="editor">
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Kullanıcı Adı
+                        </label>
+
+                        <input type="text"
+                        class="form-control"
+                        name="kullanici"
+                        required>
+
+                    </div>
+
+                    <div class="mb-4">
+
+                        <label class="form-label">
+                            Şifre
+                        </label>
+
+                        <input type="password"
+                        class="form-control"
+                        name="sifre"
+                        required>
+
+                    </div>
+
+                    <button type="submit"
+                    class="btn btn-primary btn-login w-100">
+
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                        Sisteme Giriş Yap
+
+                    </button>
+
+                    <button type="button"
+                    onclick="location.reload()"
+                    class="btn btn-link w-100 mt-3">
+
+                        Geri Dön
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+function showLoginForm(){
+
+    document.getElementById('choiceArea').style.display='none';
+
+    document.getElementById('loginForm').style.display='block';
+}
+
+</script>
+
+</body>
+</html>

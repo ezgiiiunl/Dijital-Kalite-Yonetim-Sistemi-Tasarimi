@@ -1,0 +1,1389 @@
+{% extends "ana.html" %}
+{% block icerik %}
+
+<!-- ============================================================
+     YGG (YÖNETİMİN GÖZDEN GEÇİRİLMESİ) MODÜLÜ
+     ISO 9001:2015 Madde 9.3 — Yönetimin Gözden Geçirilmesi
+     ============================================================ -->
+
+<style>
+/* KPI Kartları */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.kpi-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.kpi-card .kpi-num { font-size: 28px; font-weight: 800; line-height: 1; }
+.kpi-card .kpi-lbl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .ygg-menu-item {
+        display: block;
+        padding: 10px 20px;
+        color: #cdd9e5;
+        text-decoration: none;
+        font-size: 13.5px;
+        transition: background 0.15s;
+        border-left: 3px solid transparent;
+    }
+    .ygg-menu-item:hover {
+        background-color: rgba(255,255,255,.08);
+        color: #ffffff;
+    }
+    .ygg-menu-item.active {
+        background-color: rgba(255,255,255,.12);
+        color: #ffffff;
+        font-weight: 600;
+        border-left-color: #6ea8fe;
+    }
+    {% if session.get('rol') != 'editor' %}
+    .admin-ozel { display: none !important; }
+    {% endif %}
+
+    .ygg-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .ygg-badge-tamam   { background:#d4edda; color:#155724; }
+    .ygg-badge-devam   { background:#fff3cd; color:#856404; }
+    .ygg-badge-plan    { background:#cfe2ff; color:#084298; }
+    .ygg-badge-gecikti { background:#fde8e8; color:#7f1d1d; }
+    .ygg-badge-iptal   { background:#e9ecef; color:#495057; }
+
+    .ygg-form-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    }
+    .ygg-form-card-header {
+        padding: 11px 18px;
+        font-weight: 700;
+        font-size: 13px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #fafbfc;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .ygg-form-card-body { padding: 18px; }
+    .ygg-label { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #64748b; margin-bottom: 4px; display: block; }
+    .ygg-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .ygg-table thead th { background: #1a2b45; color: #fff; padding: 10px 14px; font-weight: 600; font-size: 12px; white-space: nowrap; }
+    .ygg-table tbody td { padding: 9px 14px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; font-size: 13px; }
+    .ygg-table tbody tr:hover { background: #f0f4ff; }
+    .progress-mini { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; width: 80px; display: inline-block; }
+    .progress-mini-ic { height: 100%; background: #1a2b45; border-radius: 4px; }
+    /* ── Kart Tasarımı (görsel ile uyumlu) ── */
+    .doc-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        background: #fff;
+        transition: box-shadow 0.25s, transform 0.25s;
+        height: 100%;
+        overflow: hidden;
+    }
+    .doc-card:hover {
+        box-shadow: 0 8px 32px rgba(37,99,235,.13);
+        transform: translateY(-4px);
+    }
+    .doc-card-icon {
+        width: 52px; height: 52px;
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        margin-bottom: 14px;
+    }
+    .doc-card-body {
+        padding: 28px 24px 20px 24px;
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .doc-card-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+    .doc-card-desc  { font-size: 12.5px; color: #64748b; min-height: 36px; }
+    .doc-card-footer {
+        padding: 0 24px 22px 24px;
+    }
+    .btn-doc {
+        width: 100%;
+        border-radius: 10px;
+        border: 1.5px solid #2563eb;
+        color: #2563eb;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 9px 0;
+        display: flex; align-items: center; justify-content: center; gap: 7px;
+        transition: background 0.18s, color 0.18s;
+        cursor: pointer;
+    }
+    .btn-doc:hover { background: #2563eb; color: #fff; }
+
+    /* Renk temaları */
+    .icon-blue   { background: #eff6ff; color: #2563eb; }
+    .icon-green  { background: #f0fdf4; color: #16a34a; }
+    .icon-amber  { background: #fffbeb; color: #d97706; }
+    .icon-purple { background: #f5f3ff; color: #7c3aed; }
+
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h3 class="mb-1 fw-bold" style="color:#1e293b;">Yönetimin Gözden Geçirilmesi</>
+
+</div>
+
+
+<div class="row g-3">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<!-- =========================
+     YGG KPI KARTLARI
+========================= -->
+<div class="kpi-grid mb-4">
+
+    <!-- Toplam YGG Rapor -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#2563eb;">
+            {{ ygg_raporlar | length if ygg_raporlar else 0 }}
+        </div>
+        <div class="kpi-lbl">Toplam YGG Rapor</div>
+    </div>
+
+    <!-- Planlanan YGG -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#7c3aed;">
+            {% set planli = ygg_raporlar | selectattr('durum','equalto','Planlandı') | list | length if ygg_raporlar else 0 %}
+            {{ planli }}
+        </div>
+        <div class="kpi-lbl">Planlanan YGG</div>
+    </div>
+
+    <!-- Tamamlanan YGG -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#16a34a;">
+            {% set tamam = ygg_raporlar | selectattr('durum','equalto','Tamamlandı') | list | length if ygg_raporlar else 0 %}
+            {{ tamam }}
+        </div>
+        <div class="kpi-lbl">Tamamlanan YGG</div>
+    </div>
+
+    <!-- Geciken YGG -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#d97706;">
+            {% set gecik = ygg_raporlar | selectattr('durum','equalto','Gecikti') | list | length if ygg_raporlar else 0 %}
+            {{ gecik }}
+        </div>
+        <div class="kpi-lbl">Geciken YGG</div>
+    </div>
+
+    <!-- Karar Sayısı -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#0ea5e9;">
+            {{ ygg_kararlar | length if ygg_kararlar else 0 }}
+        </div>
+        <div class="kpi-lbl">Toplam Karar</div>
+    </div>
+
+    <!-- Tamamlanan Kararlar -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#22c55e;">
+            {% set karar_tamam = ygg_kararlar | selectattr('durum','equalto','Tamamlandı') | list | length if ygg_kararlar else 0 %}
+            {{ karar_tamam }}
+        </div>
+        <div class="kpi-lbl">Tamamlanan Karar</div>
+    </div>
+
+
+
+    <!-- Devam Eden Aksiyon -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#f59e0b;">
+            {% set devam = ygg_aksiyonlar | selectattr('durum','equalto','Devam Ediyor') | list | length if ygg_aksiyonlar else 0 %}
+            {{ devam }}
+        </div>
+        <div class="kpi-lbl">Devam Eden Aksiyon</div>
+    </div>
+
+    <!-- Geciken Aksiyon -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#ef4444;">
+            {% set aks_gecik = ygg_aksiyonlar | selectattr('durum','equalto','Gecikti') | list | length if ygg_aksiyonlar else 0 %}
+            {{ aks_gecik }}
+        </div>
+        <div class="kpi-lbl">Geciken Aksiyon</div>
+    </div>
+
+    <!-- Aksiyon Tamamlanma Oranı -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#10b981;">
+            {% set toplam = ygg_aksiyonlar | length if ygg_aksiyonlar else 0 %}
+            {% set tamamlanan = ygg_aksiyonlar | selectattr('durum','equalto','Tamamlandı') | list | length if ygg_aksiyonlar else 0 %}
+
+            {{ ((tamamlanan / toplam) * 100) | int if toplam > 0 else 0 }}%
+        </div>
+        <div class="kpi-lbl">Aksiyon Tamamlanma Oranı</div>
+    </div>
+
+</div>
+
+    <!-- KART 1: YGG Prosedürleri -->
+<div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-blue">
+                    <i class="bi bi-file-text"></i>
+                </div>
+                <div class="doc-card-title">Yönetimi Gözden Geçirme Prosedürü</div>
+                <div class="doc-card-desc"> ISO 9.3 kapsamındaki gözden geçirme prosedürleri </div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#uygunsuzlukModal">
+                    <i class="bi bi-arrow-right-circle"></i> Modülü Aç
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- KART 2: Karar Takip -->
+<div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-blue">
+                    <i class="bi bi-file-text"></i>
+                </div>
+                <div class="doc-card-title">Karar Takip Tablosu</div>
+                <div class="doc-card-desc"> YGG kararları ve aksiyon takibi </div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#kararTakipModal">
+                    <i class="bi bi-arrow-right-circle"></i> Modülü Aç
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KART 3: YGG Raporları -->
+
+<div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-blue">
+                    <i class="bi bi-file-text"></i>
+                </div>
+                <div class="doc-card-title">Yönetimi Gözden Geçirme Raporları</div>
+                <div class="doc-card-desc">Toplantı kayıtları, girdiler ve çıktılar </div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#yggRaporModal">
+                    <i class="bi bi-arrow-right-circle"></i> Modülü Aç
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ================================================================
+     MODAL 1: KARAR TAKİP TABLOSU
+     ISO 9001:2015 Madde 9.3.3 — YGG Çıktıları
+     ================================================================ -->
+<div class="modal fade" id="kararTakipModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius:10px; overflow:hidden;">
+            <div class="modal-header" style="background-color:#1a2b45; color:#fff; border-bottom:none;">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-table me-2" style="color:#6ea8fe;"></i>Karar Takip Tablosu
+                    <small class="ms-2" style="font-size:11px; color:#93c5fd; font-weight:400;">ISO 9001:2015 Md. 9.3.3</small>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-0 h-100 d-flex">
+                <!-- SOL NAVİGASYON -->
+                <div style="width:220px; min-width:220px; background-color:#1e3a5f; color:#cdd9e5; padding:16px 0;">
+                    <div style="font-size:11px; font-weight:600; letter-spacing:1px; padding:0 16px 8px; color:#8aa8c8;">KARAR TAKİP</div>
+                    <a href="#" class="ygg-menu-item active" onclick="kararSekmeGoster('kararlar', this); return false;">
+                        <i class="bi bi-list-check me-2"></i>Kararlar
+                    </a>
+                    <a href="#" class="ygg-menu-item" onclick="kararSekmeGoster('aksiyonlar', this); return false;">
+                        <i class="bi bi-arrow-right-circle me-2"></i>Aksiyonlar
+                    </a>
+                </div>
+
+                <!-- SAĞ İÇERİK -->
+                <div class="flex-fill p-3" style="background:#ffffff; overflow-y:auto;">
+
+                    <!-- SEKME: KARARLAR -->
+                    <div id="sekme-kararlar">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <h6 class="mb-0 fw-semibold" style="color:#1a2b45;">
+                                <i class="bi bi-folder2-open me-2" style="color:#6ea8fe;"></i>YGG Kararları
+                                <small class="text-muted fw-normal ms-2" style="font-size:11px;">(ISO 9.3.3)</small>
+                            </h6>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <!-- FİLTRE -->
+                                <select id="karar_durum_filter" class="form-select form-select-sm" style="width:150px;" onchange="kararListeYenile()">
+                                    <option value="">Tüm Durumlar</option>
+                                    <option>Tamamlandı</option>
+                                    <option>Devam Ediyor</option>
+                                    <option>Planlandı</option>
+                                    <option>Gecikti</option>
+                                </select>
+                                <input type="text" id="karar_ara" class="form-control form-control-sm" style="width:160px;" placeholder="Ara..." oninput="kararAra()">
+                                <button class="btn btn-sm admin-ozel" style="background-color:#1a2b45; color:#fff; border:none;" onclick="kararFormGoster()">
+                                    <i class="bi bi-plus-circle me-1"></i>Yeni Karar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- YENİ KARAR FORMU (gizli) -->
+                        <div id="karar-form-panel" class="ygg-form-card mb-3" style="display:none;">
+                            <div class="ygg-form-card-header">
+                                <i class="bi bi-plus-circle" style="color:#6ea8fe;"></i>
+                                <span id="karar-form-baslik">Yeni Karar Ekle</span>
+                                <button type="button" class="btn btn-sm ms-auto" style="background:#e9ecef; color:#495057; border:none; font-size:12px;" onclick="kararFormGizle()">İptal</button>
+                            </div>
+                            <div class="ygg-form-card-body">
+                                <input type="hidden" id="kf_id" value="">
+                                <div id="karar_hata" style="display:none; background:#f8d7da; color:#842029; padding:9px 14px; border-radius:6px; margin-bottom:12px; font-size:13px;"></div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Karar No *</label>
+                                        <input type="text" id="kf_no" class="form-control form-control-sm" placeholder="K-2025-001">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">YGG Tarihi *</label>
+                                        <input type="date" id="kf_tarih" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">Konu / ISO Maddesi *</label>
+                                        <input type="text" id="kf_konu" class="form-control form-control-sm" placeholder="örn: Müşteri Memnuniyeti (9.1.2)">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">Sorumlu *</label>
+                                        <input type="text" id="kf_sorumlu" class="form-control form-control-sm" placeholder="Ad Soyad / Birim">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Hedef Tarih</label>
+                                        <input type="date" id="kf_hedef" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-8">
+                                        <label class="ygg-label">Alınan Karar *</label>
+                                        <textarea id="kf_karar" class="form-control form-control-sm" rows="2" placeholder="YGG'de alınan kararın açıklaması..."></textarea>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Durum</label>
+                                        <select id="kf_durum" class="form-select form-select-sm">
+                                            <option>Planlandı</option>
+                                            <option>Devam Ediyor</option>
+                                            <option>Tamamlandı</option>
+                                            <option>Gecikti</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">ISO Md. Ref.</label>
+                                        <input type="text" id="kf_iso_ref" class="form-control form-control-sm" placeholder="9.3.3.a">
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-sm" style="background:#1a2b45; color:#fff;" onclick="kararKaydet()">
+                                        <i class="bi bi-save me-1"></i>Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="ygg-table">
+                                <thead>
+                                    <tr>
+                                        <th>Karar No</th>
+                                        <th>YGG Tarihi</th>
+                                        <th>Konu / Madde</th>
+                                        <th>Alınan Karar</th>
+                                        <th>Sorumlu</th>
+                                        <th>Hedef Tarih</th>
+                                        <th>Durum</th>
+                                        <th class="admin-ozel">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="kararTableBody">
+                                    <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:30px;">Yükleniyor...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div><!-- /sekme-kararlar -->
+
+                    <!-- SEKME: AKSİYONLAR -->
+                    <div id="sekme-aksiyonlar" style="display:none;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <h6 class="mb-0 fw-semibold" style="color:#1a2b45;">
+                                <i class="bi bi-arrow-right-circle me-2" style="color:#6ea8fe;"></i>Aksiyon Takibi
+                                <small class="text-muted fw-normal ms-2" style="font-size:11px;">(ISO 10.1)</small>
+                            </h6>
+                            <button class="btn btn-sm admin-ozel" style="background-color:#1a2b45; color:#fff; border:none;" onclick="aksiyonFormGoster()">
+                                <i class="bi bi-plus-circle me-1"></i>Yeni Aksiyon
+                            </button>
+                        </div>
+
+                        <!-- AKSİYON FORMU (gizli) -->
+                        <div id="aksiyon-form-panel" class="ygg-form-card mb-3" style="display:none;">
+                            <div class="ygg-form-card-header">
+                                <i class="bi bi-plus-circle" style="color:#6ea8fe;"></i>
+                                <span id="aksiyon-form-baslik">Yeni Aksiyon Ekle</span>
+                                <button type="button" class="btn btn-sm ms-auto" style="background:#e9ecef; color:#495057; border:none; font-size:12px;" onclick="aksiyonFormGizle()">İptal</button>
+                            </div>
+                            <div class="ygg-form-card-body">
+                                <input type="hidden" id="af_id" value="">
+                                <div id="aksiyon_hata" style="display:none; background:#f8d7da; color:#842029; padding:9px 14px; border-radius:6px; margin-bottom:12px; font-size:13px;"></div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Aksiyon No *</label>
+                                        <input type="text" id="af_no" class="form-control form-control-sm" placeholder="A-2025-001">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">İlgili Karar *</label>
+                                        <input type="text" id="af_karar_no" class="form-control form-control-sm" placeholder="K-2025-001">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">Sorumlu *</label>
+                                        <input type="text" id="af_sorumlu" class="form-control form-control-sm" placeholder="Ad Soyad / Birim">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Başlangıç</label>
+                                        <input type="date" id="af_baslangic" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Bitiş</label>
+                                        <input type="date" id="af_bitis" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-7">
+                                        <label class="ygg-label">Aksiyon Açıklaması *</label>
+                                        <textarea id="af_aciklama" class="form-control form-control-sm" rows="2" placeholder="Yapılacak aksiyon..."></textarea>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">Durum</label>
+                                        <select id="af_durum" class="form-select form-select-sm">
+                                            <option>Planlandı</option>
+                                            <option>Devam Ediyor</option>
+                                            <option>Tamamlandı</option>
+                                            <option>Gecikti</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">İlerleme %</label>
+                                        <input type="number" id="af_ilerleme" class="form-control form-control-sm" min="0" max="100" value="0" placeholder="0-100">
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-sm" style="background:#1a2b45; color:#fff;" onclick="aksiyonKaydet()">
+                                        <i class="bi bi-save me-1"></i>Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="ygg-table">
+                                <thead>
+                                    <tr>
+                                        <th>Aksiyon No</th>
+                                        <th>İlgili Karar</th>
+                                        <th>Aksiyon Açıklaması</th>
+                                        <th>Sorumlu</th>
+                                        <th>Başlangıç</th>
+                                        <th>Bitiş</th>
+                                        <th>İlerleme</th>
+                                        <th>Durum</th>
+                                        <th class="admin-ozel">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="aksiyonTableBody">
+                                    <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:30px;">Yükleniyor...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div><!-- /sekme-aksiyonlar -->
+
+                </div><!-- /flex-fill -->
+            </div><!-- /modal-body -->
+        </div>
+    </div>
+</div><!-- /#kararTakipModal -->
+
+
+<!-- ================================================================
+     MODAL 2: YGG RAPORLARI
+     ISO 9001:2015 Madde 9.3 — Zorunlu Dokümante Edilmiş Bilgi
+     ================================================================ -->
+<div class="modal fade" id="yggRaporModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius:10px; overflow:hidden;">
+            <div class="modal-header" style="background-color:#1a2b45; color:#fff; border-bottom:none;">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-file-earmark-text me-2" style="color:#6ea8fe;"></i>YGG Raporları
+
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-0 h-100 d-flex" >
+                <!-- SOL NAVİGASYON -->
+                <div style="width:220px; min-width:220px; background-color:#1e3a5f; color:#cdd9e5; padding:16px 0;">
+                    <div style="font-size:11px; font-weight:600; letter-spacing:1px; padding:0 16px 8px; color:#8aa8c8;">YGG RAPORLARI</div>
+                    <a href="#" class="ygg-menu-item active" onclick="raporSekmeGoster('raporListesi', this); return false;">
+                        <i class="bi bi-journal-text me-2"></i>Rapor Listesi
+                    </a>
+                    <a href="#" class="ygg-menu-item" onclick="raporSekmeGoster('girdiler', this); return false;">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>YGG Girdileri
+                    </a>
+                    <a href="#" class="ygg-menu-item" onclick="raporSekmeGoster('ciktilar', this); return false;">
+                        <i class="bi bi-box-arrow-right me-2"></i>YGG Çıktıları
+                    </a>
+
+                </div>
+
+                <!-- SAĞ İÇERİK -->
+                <div class="flex-fill p-3" style="background:#fff; overflow-y:auto;">
+
+                    <!-- SEKME: RAPOR LİSTESİ -->
+                    <div id="rapor-sekme-raporListesi">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <h6 class="mb-0 fw-semibold" style="color:#1a2b45;">
+                                <i class="bi bi-folder2-open me-2" style="color:#6ea8fe;"></i>Planlı / Geçmiş YGG Toplantıları
+                            </h6>
+                            <div class="d-flex gap-2">
+                                <select id="rapor_durum_filter" class="form-select form-select-sm" style="width:150px;" onchange="raporListeYenile()">
+                                    <option value="">Tüm Durumlar</option>
+                                    <option>Tamamlandı</option><option>Planlandı</option><option>İptal</option>
+                                </select>
+                                <button class="btn btn-sm admin-ozel" style="background-color:#1a2b45; color:#fff; border:none;" onclick="raporFormGoster()">
+                                    <i class="bi bi-plus-circle me-1"></i>Yeni Rapor
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- YENİ RAPOR FORMU (gizli) -->
+                        <div id="rapor-form-panel" class="ygg-form-card mb-3" style="display:none;">
+                            <div class="ygg-form-card-header">
+                                <i class="bi bi-plus-circle" style="color:#6ea8fe;"></i>
+                                <span id="rapor-form-baslik">Yeni YGG Raporu</span>
+                                <button type="button" class="btn btn-sm ms-auto" style="background:#e9ecef; color:#495057; border:none; font-size:12px;" onclick="raporFormGizle()">İptal</button>
+                            </div>
+                            <div class="ygg-form-card-body">
+                                <input type="hidden" id="rf_id" value="">
+                                <div id="rapor_hata" style="display:none; background:#f8d7da; color:#842029; padding:9px 14px; border-radius:6px; margin-bottom:12px; font-size:13px;"></div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Rapor No *</label>
+                                        <input type="text" id="rf_no" class="form-control form-control-sm" placeholder="YGG-2025-01">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Dönem *</label>
+                                        <input type="text" id="rf_donem" class="form-control form-control-sm" placeholder="2025 / 1. Dönem">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Toplantı Tarihi *</label>
+                                        <input type="date" id="rf_tarih" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">Toplantı Yeri</label>
+                                        <input type="text" id="rf_yer" class="form-control form-control-sm" placeholder="Toplantı Salonu A">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">Başkanlık Eden *</label>
+                                        <input type="text" id="rf_baskan" class="form-control form-control-sm" placeholder="Genel Müdür">
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="ygg-label">Kapsam Özeti</label>
+                                        <textarea id="rf_kapsam" class="form-control form-control-sm" rows="2" placeholder="Gündeme alınan konuların özeti (ISO 9.3.2 girdileri)..."></textarea>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="ygg-label">Katılımcılar</label>
+                                        <textarea id="rf_katilimci" class="form-control form-control-sm" rows="2" placeholder="Katılan kişiler / birimler..."></textarea>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Durum</label>
+                                        <select id="rf_durum" class="form-select form-select-sm">
+                                            <option>Planlandı</option>
+                                            <option>Tamamlandı</option>
+                                            <option>İptal</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-sm" style="background:#1a2b45; color:#fff;" onclick="raporKaydet()">
+                                        <i class="bi bi-save me-1"></i>Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="ygg-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rapor No</th>
+                                        <th>Dönem</th>
+                                        <th>Toplantı Tarihi</th>
+                                        <th>Toplantı Yeri</th>
+                                        <th>Başkanlık Eden</th>
+                                        <th>Kapsam</th>
+                                        <th>Durum</th>
+                                        <th>Rapor</th>
+                                        <th class="admin-ozel">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="raporTableBody">
+                                    <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:30px;">Yükleniyor...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div><!-- /rapor-sekme-raporListesi -->
+
+                    <!-- SEKME: YGG GİRDİLERİ (ISO 9.3.2) -->
+                    <div id="rapor-sekme-girdiler" style="display:none;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <h6 class="fw-semibold mb-0" style="color:#1a2b45;">
+                                <i class="bi bi-box-arrow-in-right me-2" style="color:#6ea8fe;"></i>
+                                YGG Girdileri
+                                <small class="text-muted fw-normal ms-2" style="font-size:11px;"></small>
+                            </h6>
+                            <button class="btn btn-sm admin-ozel" style="background-color:#1a2b45; color:#fff; border:none;" onclick="girdiformGoster()">
+                                <i class="bi bi-plus-circle me-1"></i>Yeni Girdi
+                            </button>
+                        </div>
+
+                        <!-- ISO 9.3.2 zorunlu girdi kontrol listesi -->
+                        <div class="p-3 mb-3" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px;">
+                            <div style="font-size:12px; font-weight:600; color:#1e40af; margin-bottom:8px;">
+                                <i class="bi bi-info-circle me-1"></i>ISO 9.3.2 Zorunlu Girdi Konuları
+                            </div>
+                            <div class="row g-1" style="font-size:11px; color:#374151;">
+                                <div class="col-md-6">a) Önceki YGG kararlarının takibi</div>
+                                <div class="col-md-6">b) KYS ile ilgili iç/dış değişiklikler</div>
+                                <div class="col-md-6">c1) Müşteri memnuniyeti ve geri bildirimler</div>
+                                <div class="col-md-6">c2) Kalite hedeflerinin karşılanma derecesi</div>
+                                <div class="col-md-6">c3) Proses performansı ve ürün uygunluğu</div>
+                                <div class="col-md-6">c4) Uygunsuzluklar ve DÖF'ler</div>
+                                <div class="col-md-6">c5) İzleme ve ölçüm sonuçları</div>
+                                <div class="col-md-6">c6) Denetim sonuçları</div>
+                                <div class="col-md-6">c7) Tedarikçi performansı</div>
+                                <div class="col-md-6">d) Kaynakların yeterliliği</div>
+                                <div class="col-md-6">e) Risk/fırsatlara yönelik önlem etkinliği</div>
+                                <div class="col-md-6">f) İyileştirme fırsatları</div>
+                            </div>
+                        </div>
+
+                        <!-- YENİ GİRDİ FORMU (gizli) -->
+                        <div id="girdi-form-panel" class="ygg-form-card mb-3" style="display:none;">
+                            <div class="ygg-form-card-header">
+                                <i class="bi bi-plus-circle" style="color:#6ea8fe;"></i>
+                                <span id="girdi-form-baslik">Yeni Girdi Ekle</span>
+                                <button type="button" class="btn btn-sm ms-auto" style="background:#e9ecef; color:#495057; border:none; font-size:12px;" onclick="girdiformGizle()">İptal</button>
+                            </div>
+                            <div class="ygg-form-card-body">
+                                <input type="hidden" id="gf_id" value="">
+                                <div id="girdi_hata" style="display:none; background:#f8d7da; color:#842029; padding:9px 14px; border-radius:6px; margin-bottom:12px; font-size:13px;"></div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">YGG Raporu *</label>
+                                        <input type="text" id="gf_rapor_no" class="form-control form-control-sm" placeholder="YGG-2025-01">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="ygg-label">Girdi Konusu (ISO 9.3.2) *</label>
+                                        <select id="gf_konu" class="form-select form-select-sm">
+                                            <option value="9.3.2.a">9.3.2.a — Önceki YGG Kararları</option>
+                                            <option value="9.3.2.b">9.3.2.b — İç/Dış Değişiklikler</option>
+                                            <option value="9.3.2.c1">9.3.2.c1 — Müşteri Memnuniyeti</option>
+                                            <option value="9.3.2.c2">9.3.2.c2 — Kalite Hedefleri</option>
+                                            <option value="9.3.2.c3">9.3.2.c3 — Proses Performansı</option>
+                                            <option value="9.3.2.c4">9.3.2.c4 — Uygunsuzluklar/DÖF</option>
+                                            <option value="9.3.2.c5">9.3.2.c5 — İzleme/Ölçüm Sonuçları</option>
+                                            <option value="9.3.2.c6">9.3.2.c6 — Denetim Sonuçları</option>
+                                            <option value="9.3.2.c7">9.3.2.c7 — Tedarikçi Performansı</option>
+                                            <option value="9.3.2.d">9.3.2.d — Kaynak Yeterliliği</option>
+                                            <option value="9.3.2.e">9.3.2.e — Risk/Fırsat Önlemleri</option>
+                                            <option value="9.3.2.f">9.3.2.f — İyileştirme Fırsatları</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">Sunan *</label>
+                                        <input type="text" id="gf_sunan" class="form-control form-control-sm" placeholder="Ad Soyad / Birim">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="ygg-label">Tarih</label>
+                                        <input type="date" id="gf_tarih" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="ygg-label">Değerlendirme Özeti *</label>
+                                    <textarea id="gf_ozet" class="form-control form-control-sm" rows="3" placeholder="Girdiye ilişkin değerlendirme, bulgular, veriler..."></textarea>
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-sm" style="background:#1a2b45; color:#fff;" onclick="girdiKaydet()">
+                                        <i class="bi bi-save me-1"></i>Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="ygg-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Girdi Konusu (ISO 9.3.2)</th>
+                                        <th>YGG Raporu</th>
+                                        <th>Sunan</th>
+                                        <th>Tarih</th>
+                                        <th>Değerlendirme Özeti</th>
+                                        <th class="admin-ozel">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="girdiTableBody">
+                                    <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:30px;">Yükleniyor...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div><!-- /rapor-sekme-girdiler -->
+
+                    <!-- SEKME: YGG ÇIKTILARI (ISO 9.3.3) -->
+                    <div id="rapor-sekme-ciktilar" style="display:none;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <h6 class="mb-0 fw-semibold" style="color:#1a2b45;">
+                                <i class="bi bi-box-arrow-right me-2" style="color:#6ea8fe;"></i>
+                                YGG Çıktıları
+                                <small class="text-muted fw-normal ms-2" style="font-size:11px;">(ISO 9001:2015 Md. 9.3.3)</small>
+                            </h6>
+                            <button class="btn btn-sm admin-ozel" style="background-color:#1a2b45; color:#fff; border:none;" onclick="ciktiFormGoster()">
+                                <i class="bi bi-plus-circle me-1"></i>Yeni Çıktı
+                            </button>
+                        </div>
+
+                        <!-- ISO 9.3.3 bilgilendirme -->
+                        <div class="p-3 mb-3" style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px;">
+                            <div style="font-size:12px; font-weight:600; color:#166534; margin-bottom:4px;">
+                                <i class="bi bi-info-circle me-1"></i>ISO 9.3.3 Zorunlu Çıktı Kategorileri
+                            </div>
+                            <div style="font-size:11px; color:#374151;">
+                                <b>a)</b> KYS ve proseslerinin iyileştirilmesine yönelik fırsatlar &nbsp;|&nbsp;
+                                <b>b)</b> KYS'de herhangi bir değişiklik ihtiyacı &nbsp;|&nbsp;
+                                <b>c)</b> Gerekli kaynaklar
+                            </div>
+                        </div>
+
+                        <!-- YENİ ÇIKTI FORMU (gizli) -->
+                        <div id="cikti-form-panel" class="ygg-form-card mb-3" style="display:none;">
+                            <div class="ygg-form-card-header">
+                                <i class="bi bi-plus-circle" style="color:#6ea8fe;"></i>
+                                <span id="cikti-form-baslik">Yeni Çıktı Ekle</span>
+                                <button type="button" class="btn btn-sm ms-auto" style="background:#e9ecef; color:#495057; border:none; font-size:12px;" onclick="ciktiFormGizle()">İptal</button>
+                            </div>
+                            <div class="ygg-form-card-body">
+                                <input type="hidden" id="cf_id" value="">
+                                <div id="cikti_hata" style="display:none; background:#f8d7da; color:#842029; padding:9px 14px; border-radius:6px; margin-bottom:12px; font-size:13px;"></div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">YGG Raporu *</label>
+                                        <input type="text" id="cf_rapor_no" class="form-control form-control-sm" placeholder="YGG-2025-01">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">Çıktı Türü (ISO 9.3.3) *</label>
+                                        <select id="cf_tur" class="form-select form-select-sm">
+                                            <option value="9.3.3.a">9.3.3.a — İyileştirme Fırsatı</option>
+                                            <option value="9.3.3.b">9.3.3.b — KYS Değişiklik İhtiyacı</option>
+                                            <option value="9.3.3.c">9.3.3.c — Kaynak İhtiyacı</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">İlgili Karar No</label>
+                                        <input type="text" id="cf_karar_no" class="form-control form-control-sm" placeholder="K-2025-001">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="ygg-label">Durum</label>
+                                        <select id="cf_durum" class="form-select form-select-sm">
+                                            <option>Planlandı</option>
+                                            <option>Devam Ediyor</option>
+                                            <option>Tamamlandı</option>
+                                            <option>Gecikti</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="ygg-label">Açıklama *</label>
+                                    <textarea id="cf_aciklama" class="form-control form-control-sm" rows="3" placeholder="Çıktıya ilişkin açıklama..."></textarea>
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-sm" style="background:#1a2b45; color:#fff;" onclick="ciktiKaydet()">
+                                        <i class="bi bi-save me-1"></i>Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="ygg-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Çıktı Türü (ISO 9.3.3)</th>
+                                        <th>YGG Raporu</th>
+                                        <th>İlgili Karar</th>
+                                        <th>Açıklama</th>
+                                        <th>Durum</th>
+                                        <th class="admin-ozel">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ciktiTableBody">
+                                    <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:30px;">Yükleniyor...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div><!-- /rapor-sekme-ciktilar -->
+
+                </div><!-- /flex-fill -->
+            </div><!-- /modal-body -->
+        </div>
+    </div>
+</div><!-- /#yggRaporModal -->
+
+
+
+
+
+
+
+<!-- ================================================================
+     JAVASCRIPT
+     ================================================================ -->
+<script>
+var isEditor = {{ 'true' if session.get('rol') == 'editor' else 'false' }};
+
+/* ── Sekme geçişleri ───────────────────────────────────── */
+function kararSekmeGoster(sekmeId, tiklanmisLink) {
+    document.getElementById('sekme-kararlar').style.display = 'none';
+    document.getElementById('sekme-aksiyonlar').style.display = 'none';
+    document.getElementById('sekme-' + sekmeId).style.display = 'block';
+    document.querySelectorAll('#kararTakipModal .ygg-menu-item').forEach(function(link) {
+        link.classList.remove('active');
+    });
+    tiklanmisLink.classList.add('active');
+    return false;
+}
+
+function raporSekmeGoster(sekmeId, tiklanmisLink) {
+    ['raporListesi','girdiler','ciktilar'].forEach(function(id) {
+        document.getElementById('rapor-sekme-' + id).style.display = 'none';
+    });
+    document.getElementById('rapor-sekme-' + sekmeId).style.display = 'block';
+    document.querySelectorAll('#yggRaporModal .ygg-menu-item').forEach(function(link) {
+        link.classList.remove('active');
+    });
+    tiklanmisLink.classList.add('active');
+    return false;
+}
+
+/* ── Badge yardımcısı ──────────────────────────────────── */
+function durumBadge(durum) {
+    var cls = 'ygg-badge-plan';
+    if (durum === 'Tamamlandı') cls = 'ygg-badge-tamam';
+    else if (durum === 'Devam Ediyor') cls = 'ygg-badge-devam';
+    else if (durum === 'Gecikti') cls = 'ygg-badge-gecikti';
+    else if (durum === 'İptal') cls = 'ygg-badge-iptal';
+    return '<span class="ygg-badge ' + cls + '">' + (durum||'—') + '</span>';
+}
+
+function islemButonlari(tip, id) {
+    if (!isEditor) return '';
+    return '<td>' +
+           '<button class="btn btn-sm me-1" style="background:#f0a500;color:#fff;font-size:11px;" onclick="' + tip + 'Duzenle(' + id + ')"><i class="bi bi-pencil"></i></button>' +
+           '<button class="btn btn-sm" style="background:#dc2626;color:#fff;font-size:11px;" onclick="' + tip + 'Sil(' + id + ')"><i class="bi bi-trash"></i></button>' +
+           '</td>';
+}
+
+/* ── KARARLAR ────────────────────────────────────────────── */
+function kararFormGoster() { document.getElementById('kf_id').value=''; clearKararForm(); document.getElementById('karar-form-panel').style.display='block'; }
+function kararFormGizle() { document.getElementById('karar-form-panel').style.display='none'; }
+function clearKararForm() { ['kf_no','kf_tarih','kf_konu','kf_sorumlu','kf_hedef','kf_karar','kf_iso_ref'].forEach(function(id) { var el = document.getElementById(id); if (el) el.value=''; }); var sel = document.getElementById('kf_durum'); if (sel) sel.selectedIndex=0; }
+
+function kararKaydet() {
+    var hataEl = document.getElementById('karar_hata');
+    hataEl.style.display = 'none';
+    var id  = document.getElementById('kf_id').value;
+    var veri = {
+        karar_no:    document.getElementById('kf_no').value.trim(),
+        ygg_tarihi:  document.getElementById('kf_tarih').value,
+        konu:        document.getElementById('kf_konu').value.trim(),
+        alinan_karar: document.getElementById('kf_karar').value.trim(),
+        sorumlu:     document.getElementById('kf_sorumlu').value.trim(),
+        hedef_tarih: document.getElementById('kf_hedef').value,
+        durum:       document.getElementById('kf_durum').value,
+        iso_ref:     document.getElementById('kf_iso_ref').value.trim()
+    };
+    if (!veri.karar_no || !veri.sorumlu || !veri.alinan_karar) {
+        hataEl.textContent = 'Karar No, Sorumlu ve Alınan Karar zorunludur.';
+        hataEl.style.display = 'block';
+        return;
+    }
+    var url    = id ? '/ygg/kararlar/guncelle/' + id : '/ygg/kararlar/ekle';
+    var method = id ? 'PUT' : 'POST';
+    fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(veri) })
+        .then(function(r) { return r.json(); })
+        .then(function(s) {
+            if (s.hata) { hataEl.textContent = s.hata; hataEl.style.display='block'; return; }
+            kararFormGizle();
+            kararListeYenile();
+        })
+        .catch(function(e) { hataEl.textContent = 'Hata: ' + e; hataEl.style.display='block'; });
+}
+
+function kararListeYenile() {
+    var tbody = document.getElementById('kararTableBody');
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+    var durum = document.getElementById('karar_durum_filter') ? document.getElementById('karar_durum_filter').value : '';
+    fetch('/ygg/kararlar' + (durum ? '?durum=' + encodeURIComponent(durum) : ''))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:30px;">Kayıt bulunamadı.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            data.forEach(function(r) {
+                var tarih = r.ygg_tarihi ? new Date(r.ygg_tarihi).toLocaleDateString('tr-TR') : '—';
+                var hedef = r.hedef_tarih ? new Date(r.hedef_tarih).toLocaleDateString('tr-TR') : '—';
+                tbody.innerHTML +=
+                    '<tr>' +
+                    '<td><span style="font-weight:600;color:#1a2b45;">' + (r.karar_no||'—') + '</span></td>' +
+                    '<td>' + tarih + '</td>' +
+                    '<td>' + (r.konu||'—') + '</td>' +
+                    '<td style="max-width:200px;">' + (r.alinan_karar ? r.alinan_karar.substring(0,80) + (r.alinan_karar.length>80?'...':'') : '—') + '</td>' +
+                    '<td>' + (r.sorumlu||'—') + '</td>' +
+                    '<td>' + hedef + '</td>' +
+                    '<td>' + durumBadge(r.durum) + '</td>' +
+                    islemButonlari('karar', r.id) +
+                    '</tr>';
+            });
+        })
+        .catch(function() {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:red;padding:20px;">Veriler yüklenemedi.</td></tr>';
+        });
+}
+
+function kararAra() {
+    var ara = (document.getElementById('karar_ara').value||'').toLowerCase();
+    document.querySelectorAll('#kararTableBody tr').forEach(function(tr) {
+        tr.style.display = tr.textContent.toLowerCase().includes(ara) ? '' : 'none';
+    });
+}
+
+function kararDuzenle(id) {
+    fetch('/ygg/kararlar/' + id)
+        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            document.getElementById('kf_id').value       = r.id;
+            document.getElementById('kf_no').value       = r.karar_no || '';
+            document.getElementById('kf_tarih').value    = r.ygg_tarihi ? r.ygg_tarihi.substring(0,10) : '';
+            document.getElementById('kf_konu').value     = r.konu || '';
+            document.getElementById('kf_karar').value    = r.alinan_karar || '';
+            document.getElementById('kf_sorumlu').value  = r.sorumlu || '';
+            document.getElementById('kf_hedef').value    = r.hedef_tarih ? r.hedef_tarih.substring(0,10) : '';
+            document.getElementById('kf_iso_ref').value  = r.iso_ref || '';
+            document.getElementById('kf_durum').value    = r.durum || 'Planlandı';
+            document.getElementById('karar-form-baslik').textContent = 'Karar Düzenle';
+            document.getElementById('karar-form-panel').style.display = 'block';
+        })
+        .catch(function() { alert('Kayıt yüklenemedi.'); });
+}
+
+function kararSil(id) {
+    if (!confirm('Bu kararı silmek istediğinizden emin misiniz?')) return;
+    fetch('/ygg/kararlar/sil/' + id, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(s) { if (s.hata) { alert(s.hata); return; } kararListeYenile(); })
+        .catch(function(e) { alert('Hata: ' + e); });
+}
+
+/* ── AKSİYONLAR ─────────────────────────────────────────── */
+function aksiyonFormGoster() { document.getElementById('af_id').value=''; document.getElementById('aksiyon-form-panel').style.display='block'; }
+function aksiyonFormGizle() { document.getElementById('aksiyon-form-panel').style.display='none'; }
+
+function aksiyonKaydet() {
+    var hataEl = document.getElementById('aksiyon_hata');
+    hataEl.style.display = 'none';
+    var id = document.getElementById('af_id').value;
+    var veri = {
+        aksiyon_no:   document.getElementById('af_no').value.trim(),
+        karar_no:     document.getElementById('af_karar_no').value.trim(),
+        aciklama:     document.getElementById('af_aciklama').value.trim(),
+        sorumlu:      document.getElementById('af_sorumlu').value.trim(),
+        baslangic:    document.getElementById('af_baslangic').value,
+        bitis:        document.getElementById('af_bitis').value,
+        ilerleme:     document.getElementById('af_ilerleme').value,
+        durum:        document.getElementById('af_durum').value
+    };
+    if (!veri.aksiyon_no || !veri.sorumlu || !veri.aciklama) {
+        hataEl.textContent = 'Aksiyon No, Sorumlu ve Açıklama zorunludur.';
+        hataEl.style.display = 'block';
+        return;
+    }
+    var url = id ? '/ygg/aksiyonlar/guncelle/' + id : '/ygg/aksiyonlar/ekle';
+    fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(veri) })
+        .then(function(r) { return r.json(); })
+        .then(function(s) {
+            if (s.hata) { hataEl.textContent = s.hata; hataEl.style.display='block'; return; }
+            aksiyonFormGizle();
+            aksiyonListeYenile();
+        })
+        .catch(function(e) { hataEl.textContent = 'Hata: ' + e; hataEl.style.display='block'; });
+}
+
+function aksiyonListeYenile() {
+    var tbody = document.getElementById('aksiyonTableBody');
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+    fetch('/ygg/aksiyonlar')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:30px;">Kayıt bulunamadı.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            data.forEach(function(r) {
+                var ilerleme = r.ilerleme || 0;
+                var ilerlemeHtml = '<div style="display:flex;align-items:center;gap:6px;">' +
+                    '<div class="progress-mini"><div class="progress-mini-ic" style="width:' + ilerleme + '%;"></div></div>' +
+                    '<small>' + ilerleme + '%</small></div>';
+                tbody.innerHTML +=
+                    '<tr>' +
+                    '<td><span style="font-weight:600;color:#1a2b45;">' + (r.aksiyon_no||'—') + '</span></td>' +
+                    '<td>' + (r.karar_no||'—') + '</td>' +
+                    '<td>' + (r.aciklama ? r.aciklama.substring(0,80) + '...' : '—') + '</td>' +
+                    '<td>' + (r.sorumlu||'—') + '</td>' +
+                    '<td>' + (r.baslangic ? new Date(r.baslangic).toLocaleDateString('tr-TR') : '—') + '</td>' +
+                    '<td>' + (r.bitis ? new Date(r.bitis).toLocaleDateString('tr-TR') : '—') + '</td>' +
+                    '<td>' + ilerlemeHtml + '</td>' +
+                    '<td>' + durumBadge(r.durum) + '</td>' +
+                    islemButonlari('aksiyon', r.id) +
+                    '</tr>';
+            });
+        })
+        .catch(function() {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:red;padding:20px;">Veriler yüklenemedi.</td></tr>';
+        });
+}
+
+function aksiyonDuzenle(id) {
+    fetch('/ygg/aksiyonlar/' + id)
+        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            document.getElementById('af_id').value         = r.id;
+            document.getElementById('af_no').value         = r.aksiyon_no || '';
+            document.getElementById('af_karar_no').value   = r.karar_no || '';
+            document.getElementById('af_aciklama').value   = r.aciklama || '';
+            document.getElementById('af_sorumlu').value    = r.sorumlu || '';
+            document.getElementById('af_baslangic').value  = r.baslangic ? r.baslangic.substring(0,10) : '';
+            document.getElementById('af_bitis').value      = r.bitis ? r.bitis.substring(0,10) : '';
+            document.getElementById('af_ilerleme').value   = r.ilerleme || 0;
+            document.getElementById('af_durum').value      = r.durum || 'Planlandı';
+            document.getElementById('aksiyon-form-baslik').textContent = 'Aksiyon Düzenle';
+            document.getElementById('aksiyon-form-panel').style.display = 'block';
+        });
+}
+
+function aksiyonSil(id) {
+    if (!confirm('Bu aksiyonu silmek istediğinizden emin misiniz?')) return;
+    fetch('/ygg/aksiyonlar/sil/' + id, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(s) { if (s.hata) { alert(s.hata); return; } aksiyonListeYenile(); });
+}
+
+/* ── RAPORLAR ─────────────────────────────────────────────── */
+function raporFormGoster() { document.getElementById('rf_id').value=''; document.getElementById('rapor-form-panel').style.display='block'; }
+function raporFormGizle() { document.getElementById('rapor-form-panel').style.display='none'; }
+
+function raporKaydet() {
+    var hataEl = document.getElementById('rapor_hata');
+    hataEl.style.display = 'none';
+    var id = document.getElementById('rf_id').value;
+    var veri = {
+        rapor_no:        document.getElementById('rf_no').value.trim(),
+        donem:           document.getElementById('rf_donem').value.trim(),
+        toplanti_tarihi: document.getElementById('rf_tarih').value,
+        toplanti_yeri:   document.getElementById('rf_yer').value.trim(),
+        baskan:          document.getElementById('rf_baskan').value.trim(),
+        kapsam:          document.getElementById('rf_kapsam').value.trim(),
+        katilimci:       document.getElementById('rf_katilimci').value.trim(),
+        durum:           document.getElementById('rf_durum').value
+    };
+    if (!veri.rapor_no || !veri.baskan) {
+        hataEl.textContent = 'Rapor No ve Başkanlık Eden zorunludur.';
+        hataEl.style.display = 'block';
+        return;
+    }
+    var url = id ? '/ygg/raporlar/guncelle/' + id : '/ygg/raporlar/ekle';
+    fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(veri) })
+        .then(function(r) { return r.json(); })
+        .then(function(s) {
+            if (s.hata) { hataEl.textContent = s.hata; hataEl.style.display='block'; return; }
+            raporFormGizle();
+            raporListeYenile();
+        })
+        .catch(function(e) { hataEl.textContent = 'Hata: ' + e; hataEl.style.display='block'; });
+}
+
+function raporListeYenile() {
+    var tbody = document.getElementById('raporTableBody');
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+    fetch('/ygg/raporlar')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:30px;">Kayıt bulunamadı.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            data.forEach(function(r) {
+                var tarih = r.toplanti_tarihi ? new Date(r.toplanti_tarihi).toLocaleDateString('tr-TR') : '—';
+                var raporLink = r.dosya_yolu ?
+                    '<a href="/uploads/ygg/' + r.dosya_yolu + '" class="btn btn-sm" style="background:#1a2b45;color:#fff;font-size:12px;" target="_blank"><i class="bi bi-file-pdf me-1"></i>Görüntüle</a>' :
+                    '<span style="color:#aaa;font-size:12px;">Henüz yok</span>';
+                tbody.innerHTML +=
+                    '<tr>' +
+                    '<td><span style="font-weight:600;color:#1a2b45;">' + (r.rapor_no||'—') + '</span></td>' +
+                    '<td>' + (r.donem||'—') + '</td>' +
+                    '<td>' + tarih + '</td>' +
+                    '<td>' + (r.toplanti_yeri||'—') + '</td>' +
+                    '<td>' + (r.baskan||'—') + '</td>' +
+                    '<td>' + (r.kapsam ? r.kapsam.substring(0,60) + '...' : '—') + '</td>' +
+                    '<td>' + durumBadge(r.durum) + '</td>' +
+                    '<td>' + raporLink + '</td>' +
+                    islemButonlari('rapor', r.id) +
+                    '</tr>';
+            });
+        })
+        .catch(function() {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:red;padding:20px;">Veriler yüklenemedi.</td></tr>';
+        });
+}
+
+function raporDuzenle(id) {
+    fetch('/ygg/raporlar/' + id)
+        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            document.getElementById('rf_id').value      = r.id;
+            document.getElementById('rf_no').value      = r.rapor_no || '';
+            document.getElementById('rf_donem').value   = r.donem || '';
+            document.getElementById('rf_tarih').value   = r.toplanti_tarihi ? r.toplanti_tarihi.substring(0,10) : '';
+            document.getElementById('rf_yer').value     = r.toplanti_yeri || '';
+            document.getElementById('rf_baskan').value  = r.baskan || '';
+            document.getElementById('rf_kapsam').value  = r.kapsam || '';
+            document.getElementById('rf_katilimci').value = r.katilimci || '';
+            document.getElementById('rf_durum').value   = r.durum || 'Planlandı';
+            document.getElementById('rapor-form-baslik').textContent = 'Rapor Düzenle';
+            document.getElementById('rapor-form-panel').style.display = 'block';
+        });
+}
+
+function raporSil(id) {
+    if (!confirm('Bu raporu silmek istediğinizden emin misiniz?')) return;
+    fetch('/ygg/raporlar/sil/' + id, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(s) { if (s.hata) { alert(s.hata); return; } raporListeYenile(); });
+}
+
+/* ── GİRDİLER ─────────────────────────────────────────────── */
+function girdiformGoster() { document.getElementById('gf_id').value=''; document.getElementById('girdi-form-panel').style.display='block'; }
+function girdiformGizle() { document.getElementById('girdi-form-panel').style.display='none'; }
+
+function girdiKaydet() {
+    var hataEl = document.getElementById('girdi_hata');
+    hataEl.style.display = 'none';
+    var id = document.getElementById('gf_id').value;
+    var veri = {
+        rapor_no:  document.getElementById('gf_rapor_no').value.trim(),
+        konu:      document.getElementById('gf_konu').value,
+        sunan:     document.getElementById('gf_sunan').value.trim(),
+        tarih:     document.getElementById('gf_tarih').value,
+        ozet:      document.getElementById('gf_ozet').value.trim()
+    };
+    if (!veri.rapor_no || !veri.sunan || !veri.ozet) {
+        hataEl.textContent = 'Rapor No, Sunan ve Özet zorunludur.';
+        hataEl.style.display = 'block';
+        return;
+    }
+    var url = id ? '/ygg/girdiler/guncelle/' + id : '/ygg/girdiler/ekle';
+    fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(veri) })
+        .then(function(r) { return r.json(); })
+        .then(function(s) {
+            if (s.hata) { hataEl.textContent = s.hata; hataEl.style.display='block'; return; }
+            girdiformGizle();
+            girdiListeYenile();
+        })
+        .catch(function(e) { hataEl.textContent = 'Hata: ' + e; hataEl.style.display='block'; });
+}
+
+function girdiListeYenile() {
+    var tbody = document.getElementById('girdiTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+    fetch('/ygg/girdiler')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:30px;">Kayıt bulunamadı.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            data.forEach(function(r, i) {
+                var tarih = r.tarih ? new Date(r.tarih).toLocaleDateString('tr-TR') : '—';
+                tbody.innerHTML +=
+                    '<tr>' +
+                    '<td>' + (i+1) + '</td>' +
+                    '<td><span style="color:#1a2b45;font-weight:500;">' + (r.konu||'—') + '</span></td>' +
+                    '<td>' + (r.rapor_no||'—') + '</td>' +
+                    '<td>' + (r.sunan||'—') + '</td>' +
+                    '<td>' + tarih + '</td>' +
+                    '<td>' + (r.ozet ? r.ozet.substring(0,80) + (r.ozet.length>80?'...':'') : '—') + '</td>' +
+                    islemButonlari('girdi', r.id) +
+                    '</tr>';
+            });
+        })
+        .catch(function() {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;padding:20px;">Veriler yüklenemedi.</td></tr>';
+        });
+}
+
+function girdiDuzenle(id) {
+    fetch('/ygg/girdiler/' + id)
+        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            document.getElementById('gf_id').value       = r.id;
+            document.getElementById('gf_rapor_no').value = r.rapor_no || '';
+            document.getElementById('gf_konu').value     = r.konu || '';
+            document.getElementById('gf_sunan').value    = r.sunan || '';
+            document.getElementById('gf_tarih').value    = r.tarih ? r.tarih.substring(0,10) : '';
+            document.getElementById('gf_ozet').value     = r.ozet || '';
+            document.getElementById('girdi-form-baslik').textContent = 'Girdi Düzenle';
+            document.getElementById('girdi-form-panel').style.display = 'block';
+        });
+}
+
+function girdiSil(id) {
+    if (!confirm('Bu girdiyi silmek istediğinizden emin misiniz?')) return;
+    fetch('/ygg/girdiler/sil/' + id, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(s) { if (s.hata) { alert(s.hata); return; } girdiListeYenile(); });
+}
+
+/* ── ÇIKTILAR ─────────────────────────────────────────────── */
+function ciktiFormGoster() { document.getElementById('cf_id').value=''; document.getElementById('cikti-form-panel').style.display='block'; }
+function ciktiFormGizle() { document.getElementById('cikti-form-panel').style.display='none'; }
+
+function ciktiKaydet() {
+    var hataEl = document.getElementById('cikti_hata');
+    hataEl.style.display = 'none';
+    var id = document.getElementById('cf_id').value;
+    var veri = {
+        rapor_no:  document.getElementById('cf_rapor_no').value.trim(),
+        tur:       document.getElementById('cf_tur').value,
+        karar_no:  document.getElementById('cf_karar_no').value.trim(),
+        aciklama:  document.getElementById('cf_aciklama').value.trim(),
+        durum:     document.getElementById('cf_durum').value
+    };
+    if (!veri.rapor_no || !veri.aciklama) {
+        hataEl.textContent = 'Rapor No ve Açıklama zorunludur.';
+        hataEl.style.display = 'block';
+        return;
+    }
+    var url = id ? '/ygg/ciktilar/guncelle/' + id : '/ygg/ciktilar/ekle';
+    fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(veri) })
+        .then(function(r) { return r.json(); })
+        .then(function(s) {
+            if (s.hata) { hataEl.textContent = s.hata; hataEl.style.display='block'; return; }
+            ciktiFormGizle();
+            ciktiListeYenile();
+        })
+        .catch(function(e) { hataEl.textContent = 'Hata: ' + e; hataEl.style.display='block'; });
+}
+
+function ciktiListeYenile() {
+    var tbody = document.getElementById('ciktiTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+    fetch('/ygg/ciktilar')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:30px;">Kayıt bulunamadı.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            data.forEach(function(r, i) {
+                tbody.innerHTML +=
+                    '<tr>' +
+                    '<td>' + (i+1) + '</td>' +
+                    '<td><span style="color:#1a2b45;font-weight:500;">' + (r.tur||'—') + '</span></td>' +
+                    '<td>' + (r.rapor_no||'—') + '</td>' +
+                    '<td>' + (r.karar_no||'—') + '</td>' +
+                    '<td>' + (r.aciklama ? r.aciklama.substring(0,80) + '...' : '—') + '</td>' +
+                    '<td>' + durumBadge(r.durum) + '</td>' +
+                    islemButonlari('cikti', r.id) +
+                    '</tr>';
+            });
+        })
+        .catch(function() {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;padding:20px;">Veriler yüklenemedi.</td></tr>';
+        });
+}
+
+function ciktiDuzenle(id) {
+    fetch('/ygg/ciktilar/' + id)
+        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            document.getElementById('cf_id').value       = r.id;
+            document.getElementById('cf_rapor_no').value = r.rapor_no || '';
+            document.getElementById('cf_tur').value      = r.tur || '';
+            document.getElementById('cf_karar_no').value = r.karar_no || '';
+            document.getElementById('cf_aciklama').value = r.aciklama || '';
+            document.getElementById('cf_durum').value    = r.durum || 'Planlandı';
+            document.getElementById('cikti-form-baslik').textContent = 'Çıktı Düzenle';
+            document.getElementById('cikti-form-panel').style.display = 'block';
+        });
+}
+
+function ciktiSil(id) {
+    if (!confirm('Bu çıktıyı silmek istediğinizden emin misiniz?')) return;
+    fetch('/ygg/ciktilar/sil/' + id, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(s) { if (s.hata) { alert(s.hata); return; } ciktiListeYenile(); });
+}
+
+/* ── Modal açıldığında yükle ────────────────────────────── */
+document.getElementById('kararTakipModal').addEventListener('show.bs.modal', function() {
+    kararListeYenile();
+    aksiyonListeYenile();
+});
+document.getElementById('yggRaporModal').addEventListener('show.bs.modal', function() {
+    raporListeYenile();
+    girdiListeYenile();
+    ciktiListeYenile();
+});
+document.getElementById('yggKpiModal').addEventListener('show.bs.modal', function() {
+    // KPI verilerini çek
+    fetch('/ygg/kpi')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.toplam_ygg !== undefined)   document.getElementById('ygg_kpi_toplam').textContent  = d.toplam_ygg;
+            if (d.tamam_karar !== undefined)   document.getElementById('ygg_kpi_tamam').textContent   = d.tamam_karar;
+            if (d.devam_aksiyon !== undefined) document.getElementById('ygg_kpi_devam').textContent   = d.devam_aksiyon;
+            if (d.gecikti !== undefined)       document.getElementById('ygg_kpi_gecikti').textContent = d.gecikti;
+        })
+        .catch(function() { /* sessiz hata */ });
+});
+</script>
+
+{% endblock %}

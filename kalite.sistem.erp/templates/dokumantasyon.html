@@ -1,0 +1,1199 @@
+
+{% extends "ana.html" %}
+{% block icerik %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * { font-family: 'Inter', sans-serif; }
+
+    {% if session.get('rol') != 'editor' %}
+    .admin-ozel { display: none !important; }
+    {% endif %}
+
+    /* ── Kart Tasarımı (görsel ile uyumlu) ── */
+    .doc-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        background: #fff;
+        transition: box-shadow 0.25s, transform 0.25s;
+        height: 100%;
+        overflow: hidden;
+    }
+    .doc-card:hover {
+        box-shadow: 0 8px 32px rgba(37,99,235,.13);
+        transform: translateY(-4px);
+    }
+    .doc-card-icon {
+        width: 52px; height: 52px;
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        margin-bottom: 14px;
+    }
+    .doc-card-body {
+        padding: 28px 24px 20px 24px;
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .doc-card-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+    .doc-card-desc  { font-size: 12.5px; color: #64748b; min-height: 36px; }
+    .doc-card-footer {
+        padding: 0 24px 22px 24px;
+    }
+    .btn-doc {
+        width: 100%;
+        border-radius: 10px;
+        border: 1.5px solid #2563eb;
+        color: #2563eb;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 9px 0;
+        display: flex; align-items: center; justify-content: center; gap: 7px;
+        transition: background 0.18s, color 0.18s;
+        cursor: pointer;
+    }
+    .btn-doc:hover { background: #2563eb; color: #fff; }
+
+    /* Renk temaları */
+    .icon-blue   { background: #eff6ff; color: #2563eb; }
+    .icon-green  { background: #f0fdf4; color: #16a34a; }
+    .icon-amber  { background: #fffbeb; color: #d97706; }
+    .icon-purple { background: #f5f3ff; color: #7c3aed; }
+
+    /* ── Modal ── */
+    .modal-content   { border-radius: 16px; border: none; }
+    .modal-header    { background: #1e293b; color: #fff; border-radius: 16px 16px 0 0; padding: 18px 24px; }
+    .modal-header .btn-close-white { filter: invert(1); }
+    .table thead th  { background: #34495e; color: #fff; border: none; padding: 13px 16px; font-size: 13px; }
+    .table tbody td  { font-size: 13px; vertical-align: middle; }
+
+    .btn-kurumsal           { background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; }
+    .btn-kurumsal:hover     { background: #1d4ed8; color: #fff; }
+    .btn-outline-kurumsal   { border: 1.5px solid #2563eb; color: #2563eb; background: transparent; border-radius: 8px; font-size: 13px; }
+    .btn-outline-kurumsal:hover { background: #2563eb; color: #fff; }
+
+    .onay-cerceve  { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+    .onay-metni    { font-size: .93rem; color: #16a34a; font-weight: 600; }
+    .duzenle-panel { display: none; background: #f0f4ff; border: 1px solid #2563eb; border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+    .duzenle-panel.aktif { display: block; }
+
+    /* ── Swimlane / Prosedür ── */
+    .card { border-radius: 12px; }
+    .modal-xl .modal-dialog { max-width: 1200px; }
+    /* KPI Kartları */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        text-align: center;
+        box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .kpi-card .kpi-num { font-size: 28px; font-weight: 800; line-height: 1; }
+    .kpi-card .kpi-lbl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Takip listesi kaynak badge ── */
+    .badge-ic  { background: #dbeafe; color: #1d4ed8; }
+    .badge-dis { background: #dcfce7; color: #15803d; }
+
+</style>
+
+<!-- ─── BAŞLIK ─────────────────────────────────────── -->
+<h3 class="mb-1 fw-bold" style="color:#1e293b;">Dökümantasyon Yönetimi</h3>
+<p class="text-muted mb-4" style="font-size:13.5px;"></p>
+
+<div class="kpi-grid mb-4">
+    <!-- Aktif İç Kaynaklı Dökümanlar -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#16a34a;">
+            {{ ic_veriler | selectattr('Durum','equalto','Aktif')| list | length if ic_veriler else 0 }}
+        </div>
+        <div class="kpi-lbl">Aktif İç Döküman</div>
+    </div>
+
+    <!-- Revize İç Kaynaklı Dökümanlar -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#2563eb;">
+            {{ ic_veriler | selectattr('Durum','equalto','Revize') |list | length if ic_veriler else 0 }}
+        </div>
+        <div class="kpi-lbl">Revize İç Döküman</div>
+    </div>
+
+    <!-- Pasif İç Kaynaklı Dökümanlar -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#dc2626;">
+            {{ ic_veriler |selectattr('Durum','equalto','Pasif') | list | length if ic_veriler else 0 }}
+        </div>
+        <div class="kpi-lbl">Pasif İç Döküman</div>
+    </div>
+</div>
+
+
+<!-- ─── KARTLAR ──────────────────────────────────── -->
+<div class="row g-4">
+
+    <!-- Dış Kaynaklı -->
+    <div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-blue">
+                    <i class="bi bi-box-arrow-in-down"></i>
+                </div>
+                <div class="doc-card-title">Dış Kaynaklı Döküman</div>
+                <div class="doc-card-desc">Dışarıdan temin edilen standart ve yönetmelik listesi.</div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#disKaynakliModal">
+                    <i class="bi bi-arrow-right-circle"></i> Listeyi Aç
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Takip Listesi -->
+    <div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-green">
+                    <i class="bi bi-list-check"></i>
+                </div>
+                <div class="doc-card-title">Döküman Takip Listesi</div>
+                <div class="doc-card-desc">Tüm dokümanların revizyon ve durum takip kaydı.</div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#takipListesiModal">
+                    <i class="bi bi-arrow-right-circle"></i> Listeyi Aç
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- İç Kaynaklı -->
+    <div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-amber">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <div class="doc-card-title">İç Kaynaklı Döküman</div>
+                <div class="doc-card-desc">Kurum içinde hazırlanan form, talimat ve politikalar.</div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#icKaynakliModal">
+                    <i class="bi bi-arrow-right-circle"></i> Listeyi Aç
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prosedür -->
+    <div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-purple">
+                    <i class="bi bi-diagram-3"></i>
+                </div>
+                <div class="doc-card-title">Prosedür Listesi</div>
+                <div class="doc-card-desc">Swimlane akış şeması ve RACI matrisi ile prosedür yönetimi.</div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#prosedurModal">
+                    <i class="bi bi-arrow-right-circle"></i> Prosedürü Aç
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /row -->
+
+
+<!-- ════════════════════════════════════════════════════════
+     DIŞ KAYNAKLI MODAL
+════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="disKaynakliModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="mb-0"><i class="bi bi-box-arrow-in-down me-2"></i>Dış Kaynaklı Dökümanlar</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="onay-cerceve">
+                    <div id="onay-alani-dis" class="d-flex align-items-center gap-2">
+                        <span class="fw-bold text-secondary flex-shrink-0" style="font-size:.85rem;">Gözden Geçirme Sorumlusu:</span>
+                        <input type="text" id="sorumlu-ad-dis" class="form-control form-control-sm" placeholder="İsim yazınız...">
+                        <button class="btn btn-sm btn-success flex-shrink-0" onclick="onaylaSorumlu('dis')">Onayla</button>
+                    </div>
+                </div>
+
+                <div id="dis-duzenle-panel" class="duzenle-panel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 text-primary">✏️ Kaydı Düzenle</h6>
+                        <button class="btn btn-sm btn-secondary" onclick="panelKapat('dis-duzenle-panel')">✕ Kapat</button>
+                    </div>
+                    <form id="dis-duzenle-form" method="POST">
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <label class="fw-bold small">Döküman No</label>
+                                <input name="DokumanNo" id="dis-input-no" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="fw-bold small">Döküman Adı</label>
+                                <input name="DokumanAdi" id="dis-input-ad" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="fw-bold small">Revizyon No</label>
+                                <input name="RevizyonNo" id="dis-input-revizyon" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="fw-bold small">Yayın Tarihi</label>
+                                <input name="YayinTarihi" id="dis-input-yayin" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="fw-bold small">Döküman Sahibi Birim</label>
+                                <input name="DokumanSahibiBirim" id="dis-input-birim" class="form-control form-control-sm">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="fw-bold small">Döküman Türü</label>
+                                <input name="DokumanTuru" id="dis-input-tur" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="fw-bold small">Durum</label>
+                                <select name="Durum" id="dis-input-durum" class="form-select form-select-sm">
+                                    <option value="Aktif">Aktif</option>
+                                    <option value="Pasif">Pasif</option>
+                                    <option value="Revize">Revize</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="fw-bold small">İçerik / Açıklama</label>
+                                <textarea name="Icerik" id="dis-input-icerik" class="form-control form-control-sm" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm mt-3">Güncelle</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2 mb-3">
+                    <input class="form-control" placeholder="🔍 Ara..." onkeyup="tabloFiltrele('disTable', this.value)">
+                    {% if session.get('rol') == 'editor' %}
+                    <button class="btn btn-kurumsal flex-shrink-0" data-bs-toggle="modal" data-bs-target="#yeniDisKaynakModal">+ Yeni Kayıt</button>
+                    {% endif %}
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Döküman No</th>
+                                <th>Döküman Adı</th>
+                                <th>Döküman Türü</th>
+                                <th>Revizyon No</th>
+                                <th>Yayın Tarihi</th>
+                                <th>Döküman Sahibi Birim</th>
+                                <th>Durum</th>
+                                {% if session.get('rol') == 'editor' %}<th>İşlem</th>{% endif %}
+                            </tr>
+                        </thead>
+                        <tbody id="disTable">
+                            {% for d in dis_veriler %}
+                            <tr>
+                                <td>{{ d.No }}</td>
+                                <td>{{ d.DokumanNo }}</td>
+                                <td>{{ d.DokumanAdi }}</td>
+                                <td>{{ d.DokumanTuru }}</td>
+                                <td>{{ d.RevizyonNo }}</td>
+                                <td>{{ d.YayinTarihi }}</td>
+                                <td>{{ d.DokumanSahibiBirim }}</td>
+                                <td>
+                                    <span class="badge {{ 'bg-success' if d.Durum == 'Aktif' else ('bg-warning text-dark' if d.Durum == 'Revize' else 'bg-secondary') }}">
+                                        {{ d.Durum }}
+                                    </span>
+                                </td>
+                                {% if session.get('rol') == 'editor' %}
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-warning btn-sm"
+                                            data-id="{{ d.No }}"
+                                            data-no="{{ d.DokumanNo }}"
+                                            data-ad="{{ d.DokumanAdi }}"
+                                            data-tur="{{ d.DokumanTuru }}"
+                                            data-revizyon="{{ d.RevizyonNo }}"
+                                            data-yayin="{{ d.YayinTarihi }}"
+                                            data-birim="{{ d.DokumanSahibiBirim }}"
+                                            data-durum="{{ d.Durum }}"
+                                            data-icerik="{{ d.Icerik | default('') }}"
+                                            onclick="disDuzenleAc(this)">Düzenle</button>
+                                        <form action="/dis_sil/{{ d.No }}" method="POST" onsubmit="return confirm('Silinsin mi?')">
+                                            <button class="btn btn-danger btn-sm">Sil</button>
+                                        </form>
+                                    </div>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- YENİ DIŞ KAYNAK MODAL -->
+{% if session.get('rol') == 'editor' %}
+<div class="modal fade" id="yeniDisKaynakModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/dis_ekle" method="POST">
+                <div class="modal-header"><h5>Yeni Dış Kaynaklı Döküman</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input name="DokumanNo"          class="form-control mb-2" placeholder="Döküman No" required>
+                    <input name="DokumanAdi"         class="form-control mb-2" placeholder="Döküman Adı" required>
+                    <input name="DokumanTuru"        class="form-control mb-2" placeholder="Döküman Türü">
+                    <input name="RevizyonNo"         class="form-control mb-2" placeholder="Revizyon No">
+                    <input name="YayinTarihi"        class="form-control mb-2" placeholder="Yayın Tarihi (GG.AA.YYYY)">
+                    <input name="DokumanSahibiBirim" class="form-control mb-2" placeholder="Döküman Sahibi Birim">
+                    <select name="Durum" class="form-select mb-2">
+                        <option value="Aktif">Aktif</option>
+                        <option value="Pasif">Pasif</option>
+                        <option value="Revize">Revize</option>
+                    </select>
+                    <textarea name="Icerik" class="form-control mb-2" placeholder="İçerik / Açıklama" rows="2"></textarea>
+                </div>
+                <div class="modal-footer"><button class="btn btn-kurumsal">Kaydet</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- ════════════════════════════════════════════════════════
+     TAKİP LİSTESİ MODAL
+     ── Dış Kaynaklı + İç Kaynaklı otomatik birleşim ──
+     ── Düzenle / Sil yok; değişiklikler kaynak tablodan yansır ──
+════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="takipListesiModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Döküman Takip Listesi</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="onay-cerceve">
+                    <div id="onay-alani-takip" class="d-flex align-items-center gap-2">
+                        <span class="fw-bold text-secondary flex-shrink-0" style="font-size:.85rem;">Gözden Geçirme Sorumlusu:</span>
+                        <input type="text" id="sorumlu-ad-takip" class="form-control form-control-sm" placeholder="İsim yazınız...">
+                        <button class="btn btn-sm btn-success flex-shrink-0" onclick="onaylaSorumlu('takip')">Onayla</button>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Filtreler -->
+                <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+                    <input class="form-control" style="max-width:260px;" placeholder="🔍 Ara..." onkeyup="tabloFiltrele('takipTable', this.value)">
+                    <select class="form-select form-select-sm" style="max-width:160px;" onchange="takipKaynakFiltrele(this.value)">
+                        <option value="">Tüm Kaynaklar</option>
+                        <option value="İç Kaynaklı">İç Kaynaklı</option>
+                        <option value="Dış Kaynaklı">Dış Kaynaklı</option>
+                    </select>
+                    <select class="form-select form-select-sm" style="max-width:140px;" onchange="takipDurumFiltrele(this.value)">
+                        <option value="">Tüm Durumlar</option>
+                        <option value="Aktif">Aktif</option>
+                        <option value="Revize">Revize</option>
+                        <option value="Pasif">Pasif</option>
+                    </select>
+                    <span class="ms-auto text-muted small" id="takip-toplam-bilgi">
+                        Toplam: {{ takip_veriler | length }} kayıt
+                    </span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Döküman No</th>
+                                <th>Döküman Adı</th>
+                                <th>Döküman Türü</th>
+                                <th>Revizyon No</th>
+                                <th>Yayın Tarihi</th>
+                                <th>Döküman Sahibi Birim</th>
+                                <th>Durum</th>
+                                <th>Kaynak</th>
+                            </tr>
+                        </thead>
+                        <tbody id="takipTable">
+                            {% for d in takip_veriler %}
+                            <tr data-kaynak="{{ d.Kaynak }}" data-durum="{{ d.Durum }}">
+                                <td>{{ d.No }}</td>
+                                <td>{{ d.DokumanNo }}</td>
+                                <td>{{ d.DokumanAdi }}</td>
+                                <td>{{ d.DokumanTuru }}</td>
+                                <td>{{ d.RevizyonNo }}</td>
+                                <td>{{ d.YayinTarihi }}</td>
+                                <td>{{ d.DokumanSahibiBirim }}</td>
+                                <td>
+                                    <span class="badge {{ 'bg-success' if d.Durum == 'Aktif' else ('bg-warning text-dark' if d.Durum == 'Revize' else 'bg-secondary') }}">
+                                        {{ d.Durum }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ 'badge-ic' if d.Kaynak == 'İç Kaynaklı' else 'badge-dis' }}">
+                                        {{ d.Kaynak }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="text-muted small mt-2 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Bu liste Dış Kaynaklı ve İç Kaynaklı döküman tablolarından otomatik oluşturulmaktadır.
+                    Kayıtları düzenlemek veya silmek için ilgili tablolarını kullanınız.
+                </p>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     İÇ KAYNAKLI MODAL
+════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="icKaynakliModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>İç Kaynaklı Dökümanlar</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="onay-cerceve">
+                    <div id="onay-alani-ic" class="d-flex align-items-center gap-2">
+                        <span class="fw-bold text-secondary flex-shrink-0" style="font-size:.85rem;">Gözden Geçirme Sorumlusu:</span>
+                        <input type="text" id="sorumlu-ad-ic" class="form-control form-control-sm" placeholder="İsim yazınız...">
+                        <button class="btn btn-sm btn-success flex-shrink-0" onclick="onaylaSorumlu('ic')">Onayla</button>
+                    </div>
+                </div>
+
+                <div id="ic-duzenle-panel" class="duzenle-panel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 text-primary">✏️ Kaydı Düzenle</h6>
+                        <button class="btn btn-sm btn-secondary" onclick="panelKapat('ic-duzenle-panel')">✕ Kapat</button>
+                    </div>
+                    <form id="ic-duzenle-form" method="POST">
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <label class="fw-bold small">Döküman No</label>
+                                <input name="DokumanNo" id="ic-input-no" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="fw-bold small">Döküman Adı</label>
+                                <input name="DokumanAdi" id="ic-input-ad" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="fw-bold small">Döküman Türü</label>
+                                <input name="DokumanTuru" id="ic-input-tur" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="fw-bold small">Revizyon No</label>
+                                <input name="RevizyonNo" id="ic-input-revizyon" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="fw-bold small">Yayın Tarihi</label>
+                                <input name="YayinTarihi" id="ic-input-yayin" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="fw-bold small">Döküman Sahibi Birim</label>
+                                <input name="DokumanSahibiBirim" id="ic-input-birim" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="fw-bold small">Durum</label>
+                                <select name="Durum" id="ic-input-durum" class="form-select form-select-sm">
+                                    <option value="Aktif">Aktif</option>
+                                    <option value="Pasif">Pasif</option>
+                                    <option value="Revize">Revize</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold small">İçerik / Açıklama</label>
+                                <textarea name="Icerik" id="ic-input-icerik" class="form-control form-control-sm" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm mt-3">Güncelle</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2 mb-3">
+                    <input class="form-control" placeholder="🔍 Ara..." onkeyup="tabloFiltrele('icTable', this.value)">
+                    {% if session.get('rol') == 'editor' %}
+                    <button class="btn btn-kurumsal flex-shrink-0" data-bs-toggle="modal" data-bs-target="#yeniIcModal">+ Yeni Kayıt</button>
+                    {% endif %}
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Döküman No</th>
+                                <th>Döküman Adı</th>
+                                <th>Döküman Türü</th>
+                                <th>Revizyon No</th>
+                                <th>Yayın Tarihi</th>
+                                <th>Döküman Sahibi Birim</th>
+                                <th>Durum</th>
+                                {% if session.get('rol') == 'editor' %}<th>İşlem</th>{% endif %}
+                            </tr>
+                        </thead>
+                        <tbody id="icTable">
+                            {% for d in ic_veriler %}
+                            <tr>
+                                <td>{{ d.No }}</td>
+                                <td>{{ d.DokumanNo }}</td>
+                                <td>{{ d.DokumanAdi }}</td>
+                                <td>{{ d.DokumanTuru }}</td>
+                                <td>{{ d.RevizyonNo }}</td>
+                                <td>{{ d.YayinTarihi }}</td>
+                                <td>{{ d.DokumanSahibiBirim }}</td>
+                                <td>
+                                    <span class="badge {{ 'bg-success' if d.Durum == 'Aktif' else ('bg-warning text-dark' if d.Durum == 'Revize' else 'bg-secondary') }}">
+                                        {{ d.Durum }}
+                                    </span>
+                                </td>
+                                {% if session.get('rol') == 'editor' %}
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-warning btn-sm"
+                                            data-id="{{ d.No }}"
+                                            data-no="{{ d.DokumanNo }}"
+                                            data-ad="{{ d.DokumanAdi }}"
+                                            data-tur="{{ d.DokumanTuru }}"
+                                            data-revizyon="{{ d.RevizyonNo }}"
+                                            data-yayin="{{ d.YayinTarihi }}"
+                                            data-birim="{{ d.DokumanSahibiBirim }}"
+                                            data-durum="{{ d.Durum }}"
+                                            data-icerik="{{ d.Icerik | default('') }}"
+                                            onclick="icDuzenleAc(this)">Düzenle</button>
+                                        <form action="/ic_sil/{{ d.No }}" method="POST" onsubmit="return confirm('Silinsin mi?')">
+                                            <button class="btn btn-danger btn-sm">Sil</button>
+                                        </form>
+                                    </div>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if session.get('rol') == 'editor' %}
+<div class="modal fade" id="yeniIcModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/ic_ekle" method="POST">
+                <div class="modal-header"><h5>Yeni İç Kaynaklı Döküman</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input name="DokumanNo"          class="form-control mb-2" placeholder="Döküman No" required>
+                    <input name="DokumanAdi"         class="form-control mb-2" placeholder="Döküman Adı" required>
+                    <input name="DokumanTuru"        class="form-control mb-2" placeholder="Döküman Türü">
+                    <input name="RevizyonNo"         class="form-control mb-2" placeholder="Revizyon No">
+                    <input name="YayinTarihi"        class="form-control mb-2" placeholder="Yayın Tarihi (GG.AA.YYYY)">
+                    <input name="DokumanSahibiBirim" class="form-control mb-2" placeholder="Döküman Sahibi Birim">
+                    <select name="Durum" class="form-select mb-2">
+                        <option value="Aktif">Aktif</option>
+                        <option value="Pasif">Pasif</option>
+                        <option value="Revize">Revize</option>
+                    </select>
+                    <textarea name="Icerik" class="form-control mb-2" placeholder="İçerik / Açıklama" rows="2"></textarea>
+                </div>
+                <div class="modal-footer"><button class="btn btn-kurumsal">Kaydet</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- ════════════════════════════════════════════════════════
+     PROSEDÜR MODAL
+════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="prosedurModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Prosedür Yönetimi ve Akış Şeması</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="background:#f8fafc;">
+
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold mb-0" style="color:#1e293b;">
+                        <span id="pro-detay-baslik">Prosedür</span>
+                    </h6>
+                    {% if session.get('rol') == 'editor' %}
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success btn-sm" onclick="proKaydet()">💾 Kaydet</button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">🖨️ Yazdır</button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="onay-cerceve">
+                    <div id="onay-alani-prosedur" class="d-flex align-items-center gap-2">
+                        <span class="fw-bold text-secondary flex-shrink-0" style="font-size:.85rem;">Gözden Geçirme Sorumlusu:</span>
+                        <input type="text" id="sorumlu-ad-prosedur" class="form-control form-control-sm" placeholder="İsim yazınız...">
+                        <button class="btn btn-sm btn-success flex-shrink-0" onclick="onaylaSorumlu('prosedur')">Onayla</button>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Prosedür Bilgileri -->
+                <div class="card mb-3 border-0 shadow-sm">
+                    <div class="card-header fw-bold" style="background:#f1f5f9;font-size:13px;">📋 Prosedür Bilgileri</div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold text-muted mb-1">KOD</label>
+                                <input id="pro-kod" class="form-control form-control-sm" {% if session.get('rol') != 'editor' %}readonly style="background:#f8fafc"{% endif %} placeholder="PRO-001">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted mb-1">BAŞLIK</label>
+                                <input id="pro-baslik-input" class="form-control form-control-sm" {% if session.get('rol') != 'editor' %}readonly style="background:#f8fafc"{% endif %} placeholder="Prosedür Adı">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold text-muted mb-1">REVİZYON</label>
+                                <input id="pro-revizyon" class="form-control form-control-sm" {% if session.get('rol') != 'editor' %}readonly style="background:#f8fafc"{% endif %} placeholder="Rev.01">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold text-muted mb-1">TARİH</label>
+                                <input type="date" id="pro-tarih" class="form-control form-control-sm" {% if session.get('rol') != 'editor' %}readonly style="background:#f8fafc"{% endif %}>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold text-muted mb-1">DURUM</label>
+                                {% if session.get('rol') == 'editor' %}
+                                <select id="pro-durum" class="form-select form-select-sm">
+                                    <option value="aktif">Aktif</option>
+                                    <option value="taslak">Taslak</option>
+                                    <option value="revize">Revize</option>
+                                </select>
+                                {% else %}
+                                <input id="pro-durum" class="form-control form-control-sm" readonly style="background:#f8fafc">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted mb-1">SORUMLU</label>
+                                <input id="pro-sorumlu-input" class="form-control form-control-sm" {% if session.get('rol') != 'editor' %}readonly style="background:#f8fafc"{% endif %} placeholder="Sorumlu Birim">
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold text-muted mb-1">AÇIKLAMA / KAPSAM</label>
+                                <input id="pro-aciklama" class="form-control form-control-sm" {% if session.get('rol') != 'editor' %}readonly style="background:#f8fafc"{% endif %} placeholder="Kapsam ve amaç...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Swimlane -->
+                <div class="card mb-3 border-0 shadow-sm">
+                    <div class="card-header fw-bold d-flex align-items-center justify-content-between" style="background:#f1f5f9;font-size:13px;">
+                        <span>🔀 Süreç Akış Şeması (Swimlane)</span>
+                        {% if session.get('rol') == 'editor' %}
+                        <div class="d-flex gap-2 align-items-center">
+                            <button class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size:11px;" onclick="proLaneEkle()">+ Şerit Ekle</button>
+                            <select id="pro-adim-tip" class="form-select form-select-sm py-0" style="font-size:11px;width:auto;">
+                                <option value="baslangic">⬭ Başlangıç/Bitiş</option>
+                                <option value="islem" selected>▭ İşlem</option>
+                                <option value="karar">◇ Karar</option>
+                                <option value="belge">⬭ Belge/Veri</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="d-flex gap-4 mb-3 flex-wrap" style="font-size:11px;color:#64748b;">
+                            <span><svg width="18" height="12"><rect x="1" y="1" width="16" height="10" rx="5" ry="5" fill="none" stroke="#2563eb" stroke-width="1.5"/></svg> Başlangıç/Bitiş</span>
+                            <span><svg width="18" height="12"><rect x="1" y="1" width="16" height="10" fill="none" stroke="#2563eb" stroke-width="1.5"/></svg> İşlem</span>
+                            <span><svg width="18" height="12"><polygon points="9,1 17,6 9,11 1,6" fill="none" stroke="#d97706" stroke-width="1.5"/></svg> Karar</span>
+                            <span><svg width="18" height="12"><rect x="1" y="1" width="16" height="10" fill="none" stroke="#7c3aed" stroke-width="1.5"/><line x1="1" y1="9" x2="17" y2="9" stroke="#7c3aed" stroke-width="1"/></svg> Belge</span>
+                        </div>
+                        <div style="overflow-x:auto;overflow-y:auto;max-height:520px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;">
+                            <svg id="pro-svg-canvas" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:700px;"></svg>
+                        </div>
+                        {% if session.get('rol') == 'editor' %}
+                        <div class="mt-2 d-flex gap-2 flex-wrap" id="pro-lane-adim-butonlar"></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- RACI -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header fw-bold" style="background:#f1f5f9;font-size:13px;">📊 RACI Sorumluluk Matrisi</div>
+                    <div class="card-body p-2">
+                        <div class="d-flex gap-3 mb-2 flex-wrap" style="font-size:11px;">
+                            <span><span class="badge" style="background:#bfdbfe;color:#1d4ed8;">R</span> Responsible – Yapan</span>
+                            <span><span class="badge" style="background:#fca5a5;color:#b91c1c;">A</span> Accountable – Onaylayan</span>
+                            <span><span class="badge" style="background:#bbf7d0;color:#15803d;">C</span> Consulted – Danışılan</span>
+                            <span><span class="badge" style="background:#fde68a;color:#92400e;">I</span> Informed – Bilgilendirilen</span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="table table-bordered mb-0" id="pro-raci-table" style="font-size:12px;"></table>
+                        </div>
+                        {% if session.get('rol') == 'editor' %}
+                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="proRaciSatirEkle()">+ Süreç Adımı Ekle</button>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════ -->
+<script>
+/* ── Yardımcı Fonksiyonlar ─────────────────────────── */
+
+function tabloFiltrele(tbodyId, query) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    const rows = tbody.querySelectorAll('tr');
+    const q = query.toLowerCase().trim();
+    rows.forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
+    });
+    if (tbodyId === 'takipTable') takipSayacGuncelle();
+}
+
+/* ── Takip listesi kaynak filtresi ─────────────────── */
+function takipKaynakFiltrele(kaynak) {
+    window._takipKaynak = kaynak;
+    takipCiftFiltre();
+}
+function takipDurumFiltrele(durum) {
+    window._takipDurum = durum;
+    takipCiftFiltre();
+}
+function takipCiftFiltre() {
+    const tbody = document.getElementById('takipTable');
+    if (!tbody) return;
+    const k = (window._takipKaynak || '').toLowerCase();
+    const d = (window._takipDurum  || '').toLowerCase();
+    tbody.querySelectorAll('tr').forEach(row => {
+        const rowKaynak = (row.dataset.kaynak || '').toLowerCase();
+        const rowDurum  = (row.dataset.durum  || '').toLowerCase();
+        const kaynakOk  = !k || rowKaynak === k;
+        const durumOk   = !d || rowDurum  === d;
+        row.style.display = (kaynakOk && durumOk) ? '' : 'none';
+    });
+    takipSayacGuncelle();
+}
+function takipSayacGuncelle() {
+    const tbody = document.getElementById('takipTable');
+    const bilgi = document.getElementById('takip-toplam-bilgi');
+    if (!tbody || !bilgi) return;
+    const gorunen = [...tbody.querySelectorAll('tr')].filter(r => r.style.display !== 'none').length;
+    bilgi.textContent = 'Gösterilen: ' + gorunen + ' kayıt';
+}
+
+function panelAc(panelId) {
+    const el = document.getElementById(panelId);
+    if (!el) return;
+    el.classList.add('aktif');
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function panelKapat(panelId) {
+    const el = document.getElementById(panelId);
+    if (el) el.classList.remove('aktif');
+}
+
+function onaylaSorumlu(listeTip) {
+    const inputEl = document.getElementById('sorumlu-ad-' + listeTip);
+    const hedefEl = document.getElementById('onay-alani-' + listeTip);
+    if (!inputEl || !hedefEl) return;
+    const ad = inputEl.value.trim();
+    if (!ad) { alert('Lütfen bir isim yazınız!'); return; }
+    const tarih = new Date().toLocaleString('tr-TR');
+    hedefEl.innerHTML = `<span class="onay-metni">✓ Gözden Geçiren: ${ad} | Onay Tarihi: ${tarih}</span>`;
+}
+
+function disDuzenleAc(btn) {
+    const id       = btn.dataset.id;
+    const set = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
+    set('dis-input-no',       btn.dataset.no);
+    set('dis-input-ad',       btn.dataset.ad);
+    set('dis-input-tur',      btn.dataset.tur);
+    set('dis-input-revizyon', btn.dataset.revizyon);
+    set('dis-input-yayin',    btn.dataset.yayin);
+    set('dis-input-birim',    btn.dataset.birim);
+    set('dis-input-icerik',   btn.dataset.icerik);
+    const durumEl = document.getElementById('dis-input-durum');
+    if (durumEl) durumEl.value = btn.dataset.durum || 'Aktif';
+    document.getElementById('dis-duzenle-form').action = '/dis_guncelle/' + id;
+    panelAc('dis-duzenle-panel');
+}
+
+function icDuzenleAc(btn) {
+    const id = btn.dataset.id;
+    const set = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
+    set('ic-input-no',       btn.dataset.no);
+    set('ic-input-ad',       btn.dataset.ad);
+    set('ic-input-tur',      btn.dataset.tur);
+    set('ic-input-revizyon', btn.dataset.revizyon);
+    set('ic-input-yayin',    btn.dataset.yayin);
+    set('ic-input-birim',    btn.dataset.birim);
+    set('ic-input-icerik',   btn.dataset.icerik);
+    const durumEl = document.getElementById('ic-input-durum');
+    if (durumEl) durumEl.value = btn.dataset.durum || 'Aktif';
+    document.getElementById('ic-duzenle-form').action = '/ic_guncelle/' + id;
+    panelAc('ic-duzenle-panel');
+}
+
+/* ══ PROSEDÜR SVG MODÜLÜ ══════════════════════════════ */
+const IS_EDITOR = {{ 'true' if session.get('rol') == 'editor' else 'false' }};
+
+const RACI_CYCLE = ['R','A','C','I','X'];
+
+const LANE_H       = 140;
+const LANE_LABEL_W = 110;
+const NODE_W       = 120;
+const NODE_H       = 52;
+const COL_W        = 150;
+const PAD          = 20;
+
+let proData = {
+    kod:'PRO-001', baslik:'Düzeltici Faaliyet Prosedürü',
+    revizyon:'Rev.03', sorumlu:'Kalite Müdürü',
+    tarih:'2025-10-01', durum:'aktif',
+    aciklama:'Uygunsuzlukların tespiti, kök neden analizi ve düzeltici faaliyet planlamasını kapsar.',
+    lanes:[
+        { label:'Kalite Müdürü',
+          steps:[
+            {id:1, text:'Başla',              type:'baslangic'},
+            {id:2, text:'Uygunsuzluk Tespit', type:'islem'},
+            {id:3, text:'Kayıt Aç',           type:'islem'}
+          ]
+        },
+        { label:'Sorumlu Departman',
+          steps:[
+            {id:4, text:'Kök Neden Analizi',  type:'islem'},
+            {id:5, text:'Çözüm Yeterli mi?',  type:'karar'},
+            {id:6, text:'Aksiyon Planı',       type:'islem'}
+          ]
+        },
+        { label:'Üst Yönetim',
+          steps:[
+            {id:7, text:'Onay Belgesi',        type:'belge'},
+            {id:8, text:'Onayla',              type:'islem'},
+            {id:9, text:'Kapatıldı',           type:'baslangic'}
+          ]
+        }
+    ],
+    raciRoles:['Kalite Müdürü','Sorumlu Dept.','Üst Yönetim'],
+    raciRows:[
+        {name:'Uygunsuzluk Tespiti', vals:['R','A','I']},
+        {name:'Kök Neden Analizi',   vals:['C','R','I']},
+        {name:'Aksiyon Planı',       vals:['A','R','C']},
+        {name:'Onay',                vals:['C','I','A']},
+        {name:'Kapanış',             vals:['R','I','A']}
+    ]
+};
+
+function svgNS(tag, attrs) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k, v));
+    return el;
+}
+
+function nodeShape(svg, x, y, w, h, type, text, id, laneIdx, stepIdx) {
+    const colors = {
+        baslangic:{ stroke:'#2563eb', fill:'#eff6ff', text:'#1d4ed8' },
+        islem:    { stroke:'#2563eb', fill:'#fff',    text:'#1e293b' },
+        karar:    { stroke:'#d97706', fill:'#fffbeb', text:'#92400e' },
+        belge:    { stroke:'#7c3aed', fill:'#f5f3ff', text:'#5b21b6' }
+    };
+    const c = colors[type] || colors.islem;
+    const cx = x + w/2, cy = y + h/2;
+
+    if (type === 'baslangic') {
+        svg.appendChild(svgNS('rect', {x, y, width:w, height:h, rx:h/2, ry:h/2, fill:c.fill, stroke:c.stroke, 'stroke-width':'2'}));
+    } else if (type === 'karar') {
+        svg.appendChild(svgNS('polygon', {points:`${cx},${y} ${x+w},${cy} ${cx},${y+h} ${x},${cy}`, fill:c.fill, stroke:c.stroke, 'stroke-width':'2'}));
+    } else if (type === 'belge') {
+        const g = svgNS('g', {});
+        g.appendChild(svgNS('rect', {x, y, width:w, height:h, fill:c.fill, stroke:c.stroke, 'stroke-width':'2'}));
+        g.appendChild(svgNS('line', {x1:x, y1:y+h-8, x2:x+w, y2:y+h-8, stroke:c.stroke, 'stroke-width':'1', 'stroke-dasharray':'3,2'}));
+        svg.appendChild(g);
+    } else {
+        svg.appendChild(svgNS('rect', {x, y, width:w, height:h, fill:c.fill, stroke:c.stroke, 'stroke-width':'2', rx:'4'}));
+    }
+
+    const numR = svgNS('circle', {cx:x+10, cy:y+10, r:'8', fill:c.stroke});
+    svg.appendChild(numR);
+    const numT = svgNS('text', {x:x+10, y:y+14, 'text-anchor':'middle', 'font-size':'8', 'font-weight':'700', fill:'#fff'});
+    numT.textContent = id;
+    svg.appendChild(numT);
+
+    const words = text.split(' ');
+    const lines = [];
+    let cur = '';
+    words.forEach(w => {
+        if ((cur + ' ' + w).trim().length > 13) { lines.push(cur.trim()); cur = w; }
+        else cur = (cur + ' ' + w).trim();
+    });
+    if (cur) lines.push(cur);
+    const lineH = 13, startY = cy - ((lines.length - 1) * lineH / 2) + 1;
+    lines.forEach((line, i) => {
+        const t = svgNS('text', {x:cx, y:startY+i*lineH, 'text-anchor':'middle', 'font-size':'11', 'font-weight':'500', fill:c.text});
+        t.textContent = line;
+        svg.appendChild(t);
+    });
+
+    if (IS_EDITOR) {
+        const hitbox = svgNS('rect', {x, y, width:w, height:h, fill:'transparent', cursor:'pointer'});
+        const titleEl = svgNS('title', {});
+        titleEl.textContent = 'Çift tık: Düzenle | Sağ tık: Sil';
+        hitbox.appendChild(titleEl);
+        hitbox.addEventListener('dblclick', () => proStepDuzenle(laneIdx, stepIdx));
+        hitbox.addEventListener('contextmenu', e => { e.preventDefault(); proStepSil(laneIdx, stepIdx); });
+        svg.appendChild(hitbox);
+    }
+}
+
+function drawArrow(svg, x1, y1, x2, y2) {
+    svg.appendChild(svgNS('line', {x1, y1, x2, y2, stroke:'#94a3b8', 'stroke-width':'1.5', 'marker-end':'url(#arrowhead)'}));
+}
+
+function proSVGRender() {
+    const svg = document.getElementById('pro-svg-canvas');
+    if (!svg) return;
+    svg.innerHTML = '';
+    const lanes = proData.lanes;
+    const maxSteps = Math.max(...lanes.map(l => l.steps.length), 1);
+    const svgW = LANE_LABEL_W + maxSteps * COL_W + PAD * 2;
+    const svgH = PAD + lanes.length * LANE_H + 40;
+    svg.setAttribute('width',   svgW);
+    svg.setAttribute('height',  svgH);
+    svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+
+    const defs   = svgNS('defs', {});
+    const marker = svgNS('marker', {id:'arrowhead', markerWidth:'8', markerHeight:'6', refX:'6', refY:'3', orient:'auto'});
+    marker.appendChild(svgNS('polygon', {points:'0 0, 8 3, 0 6', fill:'#94a3b8'}));
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    svg.appendChild(svgNS('rect', {x:'0', y:'0', width:svgW, height:'36', fill:'#34495e'}));
+    const ht = svgNS('text', {x:svgW/2, y:'22', 'text-anchor':'middle', 'font-size':'12', 'font-weight':'700', fill:'#fff'});
+    ht.textContent = (proData.kod || '') + ' – ' + (proData.baslik || 'Prosedür');
+    svg.appendChild(ht);
+
+    const BASE_Y = 36;
+    lanes.forEach((lane, li) => {
+        const laneY = BASE_Y + li * LANE_H;
+        svg.appendChild(svgNS('rect', {x:'0', y:laneY, width:svgW, height:LANE_H, fill:li%2===0?'#f8fafc':'#f1f5f9', stroke:'#e2e8f0', 'stroke-width':'1'}));
+        svg.appendChild(svgNS('rect', {x:'0', y:laneY, width:LANE_LABEL_W, height:LANE_H, fill:'#e0e7ff', stroke:'#c7d2fe', 'stroke-width':'1'}));
+        const lblT = svgNS('text', {x:LANE_LABEL_W/2, y:laneY+LANE_H/2, 'text-anchor':'middle', 'dominant-baseline':'middle', 'font-size':'11', 'font-weight':'700', fill:'#3730a3', transform:`rotate(-90, ${LANE_LABEL_W/2}, ${laneY+LANE_H/2})`});
+        lblT.textContent = lane.label;
+        svg.appendChild(lblT);
+    });
+
+    lanes.forEach((lane, li) => {
+        const laneY  = BASE_Y + li * LANE_H;
+        const nodeY  = laneY + (LANE_H - NODE_H) / 2;
+        lane.steps.forEach((step, si) => {
+            const nodeX = LANE_LABEL_W + PAD + si * COL_W + (COL_W - NODE_W) / 2;
+            nodeShape(svg, nodeX, nodeY, NODE_W, NODE_H, step.type, step.text, step.id, li, si);
+            if (si < lane.steps.length - 1) {
+                const nextX = LANE_LABEL_W + PAD + (si+1)*COL_W + (COL_W-NODE_W)/2;
+                drawArrow(svg, nodeX+NODE_W, nodeY+NODE_H/2, nextX-4, nodeY+NODE_H/2);
+            }
+            if (si === lane.steps.length-1 && li < lanes.length-1) {
+                const nextLaneY  = BASE_Y + (li+1)*LANE_H;
+                const nextNodeY  = nextLaneY + (LANE_H-NODE_H)/2;
+                const arrowX = nodeX + NODE_W/2;
+                drawArrow(svg, arrowX, nodeY+NODE_H, arrowX, nextNodeY-4);
+            }
+        });
+    });
+
+    if (IS_EDITOR) {
+        const btnDiv = document.getElementById('pro-lane-adim-butonlar');
+        if (btnDiv) {
+            btnDiv.innerHTML = '';
+            lanes.forEach((lane, li) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-outline-secondary btn-sm';
+                btn.style.fontSize = '11px';
+                btn.innerHTML = `+ <strong>${lane.label}</strong>'e Adım Ekle`;
+                btn.onclick = () => proAdimEkle(li);
+                btnDiv.appendChild(btn);
+            });
+        }
+    }
+}
+
+/* ── RACI ───────────────────────────────────────────── */
+function proRaciRender() {
+    const tbl = document.getElementById('pro-raci-table');
+    if (!tbl) return;
+    const raciColors = { R:'#bfdbfe', A:'#fca5a5', C:'#bbf7d0', I:'#fde68a', X:'#f1f5f9' };
+    const raciText   = { R:'#1d4ed8', A:'#b91c1c', C:'#15803d', I:'#92400e', X:'#94a3b8' };
+
+    let html = `<thead><tr><th style="background:#34495e;color:#fff;text-align:left;min-width:180px;">Süreç Adımı</th>`;
+    proData.raciRoles.forEach(r => { html += `<th style="background:#34495e;color:#fff;text-align:center;white-space:nowrap;">${r}</th>`; });
+    html += `</tr></thead><tbody>`;
+
+    proData.raciRows.forEach((row, ri) => {
+        while (row.vals.length < proData.raciRoles.length) row.vals.push('X');
+        html += `<tr><td style="font-weight:500;">
+            ${IS_EDITOR
+                ? `<input style="border:none;outline:none;width:85%;font-size:12px;background:transparent;" value="${row.name.replace(/"/g,'&quot;')}" onchange="proRaciIsim(${ri},this.value)">
+                   <span onclick="proRaciSil(${ri})" style="color:#dc2626;cursor:pointer;font-size:12px;" title="Sil">✕</span>`
+                : row.name}
+        </td>`;
+        row.vals.slice(0, proData.raciRoles.length).forEach((v, ci) => {
+            const bg   = raciColors[v] || raciColors.X;
+            const tx   = raciText[v]   || raciText.X;
+            html += `<td style="text-align:center;">
+                <span onclick="${IS_EDITOR ? `proRaciCevir(${ri},${ci})` : ''}"
+                      title="${IS_EDITOR ? 'Tıklayarak değiştir' : ''}"
+                      style="display:inline-block;width:26px;height:26px;border-radius:50%;font-weight:700;font-size:12px;line-height:26px;background:${bg};color:${tx};cursor:${IS_EDITOR?'pointer':'default'};">${v}</span>
+            </td>`;
+        });
+        html += `</tr>`;
+    });
+    html += `</tbody>`;
+    tbl.innerHTML = html;
+}
+
+function proRenderAll() {
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    set('pro-kod',           proData.kod);
+    set('pro-baslik-input',  proData.baslik);
+    set('pro-revizyon',      proData.revizyon);
+    set('pro-sorumlu-input', proData.sorumlu);
+    set('pro-tarih',         proData.tarih);
+    set('pro-aciklama',      proData.aciklama);
+    const durumEl = document.getElementById('pro-durum');
+    if (durumEl) durumEl.value = proData.durum;
+    const baslikEl = document.getElementById('pro-detay-baslik');
+    if (baslikEl) baslikEl.textContent = proData.kod + ' – ' + proData.baslik;
+    proSVGRender();
+    proRaciRender();
+}
+
+document.getElementById('prosedurModal').addEventListener('show.bs.modal', () => proRenderAll());
+
+/* ── CRUD ───────────────────────────────────────────── */
+function proKaydet() {
+    const get = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    proData.kod      = get('pro-kod');
+    proData.baslik   = get('pro-baslik-input');
+    proData.revizyon = get('pro-revizyon');
+    proData.sorumlu  = get('pro-sorumlu-input');
+    proData.tarih    = get('pro-tarih');
+    proData.aciklama = get('pro-aciklama');
+    proData.durum    = get('pro-durum');
+
+    fetch('/api/prosedur_kaydet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(proData)
+    })
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(d => proToast(d.message || 'Kaydedildi ✓', 'success'))
+    .catch(err => proToast('Sunucu hatası: ' + err.message, 'danger'));
+
+    proRenderAll();
+}
+
+function proLaneEkle() {
+    const label = prompt('Yeni şerit / sorumlu adı:');
+    if (!label) return;
+    proData.lanes.push({ label, steps:[] });
+    proData.raciRoles.push(label);
+    proData.raciRows.forEach(r => r.vals.push('X'));
+    proRenderAll();
+}
+
+function proAdimEkle(li) {
+    const text = prompt('Adım açıklaması:');
+    if (!text) return;
+    const tip   = document.getElementById('pro-adim-tip').value;
+    const maxId = Math.max(0, ...proData.lanes.flatMap(l => l.steps.map(s => s.id)));
+    proData.lanes[li].steps.push({ id: maxId+1, text, type: tip });
+    proSVGRender();
+}
+
+function proStepDuzenle(li, si) {
+    const step    = proData.lanes[li].steps[si];
+    const yeniTxt = prompt('Adım açıklaması:', step.text);
+    if (yeniTxt === null) return;
+    const yeniTip = prompt('Tip (baslangic / islem / karar / belge):', step.type);
+    if (yeniTip === null) return;
+    step.text = yeniTxt || step.text;
+    if (['baslangic','islem','karar','belge'].includes(yeniTip)) step.type = yeniTip;
+    proSVGRender();
+}
+
+function proStepSil(li, si) {
+    if (!confirm('Bu adımı silmek istiyor musunuz?')) return;
+    proData.lanes[li].steps.splice(si, 1);
+    proSVGRender();
+}
+
+function proRaciCevir(ri, ci) {
+    const cur = proData.raciRows[ri].vals[ci];
+    const idx = RACI_CYCLE.indexOf(cur);
+    proData.raciRows[ri].vals[ci] = RACI_CYCLE[(idx < 0 ? 0 : idx + 1) % RACI_CYCLE.length];
+    proRaciRender();
+}
+function proRaciIsim(ri, val) { proData.raciRows[ri].name = val; }
+function proRaciSil(ri) {
+    if (!confirm('Bu satırı silmek istiyor musunuz?')) return;
+    proData.raciRows.splice(ri, 1);
+    proRaciRender();
+}
+function proRaciSatirEkle() {
+    const name = prompt('Süreç adımı adı:');
+    if (!name) return;
+    proData.raciRows.push({ name, vals: proData.raciRoles.map(() => 'X') });
+    proRaciRender();
+}
+
+function proToast(msg, type) {
+    const colors = { success:'#16a34a', info:'#2563eb', danger:'#dc2626' };
+    const bg = colors[type] || '#1e293b';
+    const t  = document.createElement('div');
+    t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:99999;background:${bg};color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.2);`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2800);
+}
+</script>
+{% endblock %}

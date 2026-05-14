@@ -1,0 +1,1449 @@
+{% extends "ana.html" %}
+{% block icerik %}
+
+<style>
+    :root {
+        --primary:       #2563eb;
+        --primary-light: #eff6ff;
+        --border:        #e2e8f0;
+        --surface:       #ffffff;
+        --bg:            #f8fafc;
+        --text:          #1e293b;
+        --muted:         #64748b;
+        --success:       #16a34a;
+        --warning:       #d97706;
+        --danger:        #dc2626;
+        --radius:        8px;
+        --sidebar-bg:    #1f2d3d;
+    }
+
+    .page-title { font-size: 1.4rem; font-weight: 800; color: var(--text); }
+    .page-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .kpi-card {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 16px 18px; text-align: center;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06); position: relative; overflow: hidden;
+    }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .kpi-card.c-blue::before   { background: #2563eb; }
+    .kpi-card.c-green::before  { background: #16a34a; }
+    .kpi-card.c-orange::before { background: #d97706; }
+    .kpi-card.c-red::before    { background: #dc2626; }
+    .kpi-card.c-purple::before { background: #7c3aed; }
+    .kpi-card .kpi-num { font-size: 30px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .kpi-card .kpi-lbl { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+    .card-ofi {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: var(--radius); box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 18px;
+    }
+    .card-ofi .co-header {
+        padding: 12px 18px; font-weight: 700; font-size: 13px;
+        border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
+        background: #fafbfc; border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .card-ofi .co-body { padding: 18px; }
+
+    .ofi-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .ofi-table thead th {
+        background: var(--sidebar-bg); color: #fff; padding: 10px 14px;
+        font-weight: 600; font-size: 12px; white-space: nowrap;
+    }
+    .ofi-table tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .ofi-table tbody tr:hover td { background: var(--primary-light); }
+
+    .kaynak-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .kaynak-badge.ic   { background: #dbeafe; color: #1d4ed8; }
+    .kaynak-badge.dis  { background: #fef9c3; color: #92400e; }
+    .kaynak-badge.man  { background: #f3e8ff; color: #7c3aed; }
+
+    .durum-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .durum-badge.bekliyor   { background: #fef9c3; color: #92400e; }
+    .durum-badge.devam      { background: #dbeafe; color: #1d4ed8; }
+    .durum-badge.tamamlandi { background: #dcfce7; color: #16a34a; }
+    .durum-badge.iptal      { background: #f1f5f9; color: #64748b; }
+    .durum-badge.gecikti    { background: #fee2e2; color: #dc2626; }
+
+    .onc-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+    .onc-badge.yuksek { background: #fee2e2; color: #b91c1c; }
+    .onc-badge.orta   { background: #fef9c3; color: #92400e; }
+    .onc-badge.dusuk  { background: #dcfce7; color: #16a34a; }
+
+    .iso-ref {
+        display: inline-block; background: #eff6ff; color: #1d4ed8;
+        border: 1px solid #bfdbfe; border-radius: 4px; font-size: 10px;
+        font-weight: 700; padding: 1px 6px; white-space: nowrap;
+    }
+
+    .btn-aksiyon { font-size: 11px; padding: 2px 8px; border-radius: 4px; border: none; cursor: pointer; white-space: nowrap; }
+    .btn-goruntule { background: #eff6ff; color: #1d4ed8; }
+    .btn-goruntule:hover { background: #dbeafe; }
+    .btn-duzenle  { background: #f0fdf4; color: #16a34a; }
+    .btn-duzenle:hover { background: #dcfce7; }
+    .btn-sil      { background: #fef2f2; color: #b91c1c; }
+    .btn-sil:hover { background: #fee2e2; }
+    .btn-tamamla  { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+    .btn-tamamla:hover { background: #dcfce7; }
+    .btn-iptal-on { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+    .btn-iptal-on:hover { background: #e2e8f0; }
+
+    .ofi-form-label {
+        font-size: 11px; font-weight: 700; color: var(--muted);
+        text-transform: uppercase; margin-bottom: 4px; display: block;
+    }
+
+    .ofi-tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+    .ofi-tab {
+        padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(--muted);
+        cursor: pointer; border-radius: 6px 6px 0 0; border: 1px solid transparent;
+        border-bottom: none; margin-bottom: -2px; background: transparent; transition: .15s;
+    }
+    .ofi-tab:hover { color: var(--primary); }
+    .ofi-tab.aktif { color: var(--primary); background: var(--surface); border-color: var(--border); border-bottom-color: var(--surface); }
+
+    .ofi-panel      { display: none; }
+    .ofi-panel.aktif { display: block; }
+
+    /* Analiz */
+    .bar-chart-wrap { padding: 8px 0; }
+    .bar-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 12px; }
+    .bar-item .bar-label { width: 180px; flex-shrink: 0; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-item .bar-track { flex: 1; height: 14px; background: #e2e8f0; border-radius: 7px; overflow: hidden; }
+    .bar-item .bar-fill  { height: 100%; border-radius: 7px; transition: width .4s ease; }
+    .bar-item .bar-val   { width: 36px; text-align: right; font-weight: 700; color: var(--text); }
+
+    /* Detay modal */
+    .detail-row { display: flex; gap: 12px; margin-bottom: 10px; }
+    .detail-row .dr-label { width: 150px; flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; padding-top: 2px; }
+    .detail-row .dr-val   { font-size: 13px; color: var(--text); }
+
+    /* Timeline */
+    .timeline { position: relative; padding-left: 24px; }
+    .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .tl-item { position: relative; margin-bottom: 14px; }
+    .tl-dot  { position: absolute; left: -20px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--primary); }
+    .tl-dot.green  { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
+    .tl-dot.orange { background: var(--warning); box-shadow: 0 0 0 2px var(--warning); }
+    .tl-content { font-size: 12px; color: var(--text); background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; }
+    .tl-meta    { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+    /* Filtre */
+    .filtre-satir { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
+    .filtre-satir .form-control,
+    .filtre-satir .form-select { font-size: 12px; }
+
+    /* İlerleme */
+    .ilerleme-wrap { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+    .ilerleme-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+
+    /* Bilgi satırı */
+    .bilgi-satir { display: flex; gap: 18px; flex-wrap: wrap; padding: 10px 14px; background: #f8fafc; border-radius: 6px; margin-bottom: 12px; font-size: 12px; }
+    .bilgi-item  { display: flex; flex-direction: column; }
+    .bilgi-item .bl { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .bilgi-item .bv { font-weight: 600; color: var(--text); }
+
+    /* ── TAKVİM ── */
+    .takvim-gun {
+        min-height: 52px; border-radius: 6px; padding: 3px 5px;
+        border: 1px solid var(--border); background: #fff; position: relative;
+        transition: background .15s;
+    }
+    .takvim-gun.bugun { border-color: #2563eb; background: #eff6ff; }
+    .takvim-gun.aralik-ici { background: #f0fdf4; border-color: #86efac; }
+    .takvim-gun.aralik-baslangic { background: #dcfce7; border-color: #16a34a; }
+    .takvim-gun.aralik-bitis { background: #fee2e2; border-color: #f87171; }
+    .takvim-gun-no { font-size: 11px; font-weight: 600; color: var(--text); }
+    .takvim-oneri-pill {
+        font-size: 9px; border-radius: 3px; padding: 1px 4px; margin-top: 2px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        cursor: pointer; display: block;
+    }
+    .takvim-etkinlik-pill {
+        font-size: 9px; border-radius: 3px; padding: 1px 4px; margin-top: 2px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        background: #7c3aed; color: #fff; cursor: pointer; display: block;
+    }
+
+    /* ── MATRİS (3x3) ── */
+    .matris-grid {
+        display: grid;
+        grid-template-columns: 80px 1fr 1fr 1fr;
+        grid-template-rows: 36px 1fr 1fr 1fr;
+        gap: 4px;
+        font-size: 11px;
+    }
+    .matris-eksen-ust {
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 10px; color: var(--muted); letter-spacing: .5px;
+    }
+    .matris-eksen-sol {
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 10px; color: var(--muted);
+        writing-mode: vertical-lr; transform: rotate(180deg); letter-spacing: .5px;
+    }
+    .matris-hucre {
+        border-radius: 8px; padding: 8px; min-height: 110px;
+        display: flex; flex-direction: column; overflow: hidden;
+    }
+    .matris-hucre-baslik {
+        font-size: 10px; font-weight: 700; margin-bottom: 6px; flex-shrink: 0;
+    }
+    .matris-hucre-items {
+        flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px;
+    }
+    .matris-hucre-items::-webkit-scrollbar { width: 4px; }
+    .matris-hucre-items::-webkit-scrollbar-track { background: transparent; }
+    .matris-hucre-items::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 4px; }
+    .matris-item {
+        font-size: 10px; background: rgba(255,255,255,.85); border-radius: 4px;
+        padding: 3px 6px; cursor: pointer; border: 1px solid rgba(0,0,0,.06);
+        transition: background .15s; flex-shrink: 0;
+    }
+    .matris-item:hover { background: rgba(255,255,255,1); }
+
+    /* Gecikti gün sayısı */
+    .gecikti-gun { font-size: 9px; color: #dc2626; font-weight: 700; }
+
+    @media (max-width: 768px) {
+        .kpi-grid { grid-template-columns: repeat(2,1fr); }
+        .filtre-satir { flex-direction: column; }
+        .ofi-table { display: block; overflow-x: auto; }
+        .matris-grid { grid-template-columns: 50px 1fr 1fr 1fr; }
+    }
+
+    {% if session.get('rol') != 'editor' %}
+    .admin-ozel { display: none !important; }
+    {% endif %}
+</style>
+
+<!-- ══ BAŞLIK ══════════════════════════════════════════════════════ -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <div class="page-title"></i>İyileştirme Önerileri </div>
+        <div class="page-sub">İç denetim, dış denetim ve yönetim kaynaklı tüm iyileştirme önerilerinin takip ve analiz merkezi.</div>
+    </div>
+    {% if session.get('rol') == 'editor' %}
+    <button class="btn btn-sm admin-ozel" style="background:#2563eb;color:#fff;border:none;border-radius:6px;font-weight:600;padding:7px 16px;"
+        onclick="ofiModalAc()">
+        <i class="bi bi-plus-circle me-1"></i>Öneri Ekle
+    </button>
+    {% endif %}
+</div>
+
+<!-- ══ KPI KARTLARI ══════════════════════════════════════════════ -->
+<div class="kpi-grid">
+    <div class="kpi-card c-blue">
+        <div class="kpi-num" id="kpi-toplam" style="color:#2563eb;">0</div>
+        <div class="kpi-lbl">Toplam Öneri</div>
+    </div>
+    <div class="kpi-card c-orange">
+        <div class="kpi-num" id="kpi-bekliyor" style="color:#d97706;">0</div>
+        <div class="kpi-lbl">Değerlendirmede</div>
+    </div>
+    <div class="kpi-card c-blue">
+        <div class="kpi-num" id="kpi-devam" style="color:#2563eb;">0</div>
+        <div class="kpi-lbl">Uygulamada</div>
+    </div>
+    <div class="kpi-card c-green">
+        <div class="kpi-num" id="kpi-tamamlandi" style="color:#16a34a;">0</div>
+        <div class="kpi-lbl">Tamamlanan</div>
+    </div>
+    <div class="kpi-card c-red">
+        <div class="kpi-num" id="kpi-gecikti" style="color:#dc2626;">0</div>
+        <div class="kpi-lbl">Geciken</div>
+    </div>
+    <div class="kpi-card c-purple">
+        <div class="kpi-num" id="kpi-tamamlanma" style="color:#7c3aed;">0%</div>
+        <div class="kpi-lbl">Tamamlanma Oranı</div>
+    </div>
+</div>
+
+<!-- ══ SEKMELER ══════════════════════════════════════════════════ -->
+<div class="ofi-tabs">
+    <div class="ofi-tab aktif" onclick="ofiSekme('liste',this)"><i class="bi bi-list-ul me-1"></i>Öneri Listesi</div>
+    <div class="ofi-tab" onclick="ofiSekme('analiz',this)"><i class="bi bi-bar-chart-line me-1"></i>Analiz & Raporlama</div>
+    <div class="ofi-tab" onclick="ofiSekme('takvim',this)"><i class="bi bi-calendar-range me-1"></i>Takvim Görünümü</div>
+    <div class="ofi-tab" onclick="ofiSekme('matris',this)"><i class="bi bi-grid-3x3 me-1"></i>Öncelik Matrisi</div>
+</div>
+
+<!-- ══ PANEL 1: LİSTE ══════════════════════════════════════════ -->
+<div id="ofi-panel-liste" class="ofi-panel aktif">
+    <div class="filtre-satir">
+        <div>
+            <label class="ofi-form-label">Kaynak</label>
+            <select class="form-select form-select-sm" id="filtre-kaynak" onchange="ofiFiltrele()">
+                <option value="">Tümü</option>
+                <option value="İç Denetim">İç Denetim</option>
+                <option value="Dış Denetim">Dış Denetim</option>
+                <option value="Manuel">Manuel / Diğer</option>
+            </select>
+        </div>
+        <div>
+            <label class="ofi-form-label">Durum</label>
+            <select class="form-select form-select-sm" id="filtre-durum" onchange="ofiFiltrele()">
+                <option value="">Tümü</option>
+                <option value="Değerlendirmede">Değerlendirmede</option>
+                <option value="Uygulamada">Uygulamada</option>
+                <option value="Tamamlandı">Tamamlandı</option>
+                <option value="Gecikti">Gecikti</option>
+                <option value="İptal">İptal</option>
+            </select>
+        </div>
+        <div>
+            <label class="ofi-form-label">Öncelik</label>
+            <select class="form-select form-select-sm" id="filtre-oncelik" onchange="ofiFiltrele()">
+                <option value="">Tümü</option>
+                <option value="Yüksek">Yüksek</option>
+                <option value="Orta">Orta</option>
+                <option value="Düşük">Düşük</option>
+            </select>
+        </div>
+        <div>
+            <label class="ofi-form-label">Birim</label>
+            <select class="form-select form-select-sm" id="filtre-birim" onchange="ofiFiltrele()">
+                <option value="">Tümü</option>
+            </select>
+        </div>
+        <div style="flex:1;">
+            <label class="ofi-form-label">Ara</label>
+            <input class="form-control form-control-sm" id="filtre-ara" placeholder="Öneri no, madde, açıklama..." oninput="ofiFiltrele()">
+        </div>
+        <div>
+            <label class="ofi-form-label">&nbsp;</label>
+            <button class="btn btn-sm btn-outline-secondary" onclick="filtreleriSifirla()">
+                <i class="bi bi-x-circle"></i> Sıfırla
+            </button>
+        </div>
+    </div>
+
+    <div class="card-ofi">
+        <div class="co-header">
+            <i class="bi bi-lightbulb text-warning"></i>İyileştirme Önerileri
+            <span class="ms-auto text-muted fw-normal" style="font-size:11px;" id="liste-sayac">0 kayıt</span>
+        </div>
+        <div class="co-body p-0" style="overflow-x:auto;">
+            <table class="ofi-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Öneri No</th>
+                        <th>Kaynak</th>
+                        <th>Denetim Adı / Tarihi</th>
+                        <th>Açıklama</th>
+                        <th>İlgili Birim</th>
+                        <th>Öncelik</th>
+                        <th>Sorumlu</th>
+                        <th>Başlangıç</th>
+                        <th>Hedef Tarih</th>
+                        <th>Durum</th>
+                        <th>Tamamlanma</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="ofi-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ══ PANEL 2: ANALİZ ══════════════════════════════════════════ -->
+<div id="ofi-panel-analiz" class="ofi-panel">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card-ofi h-100">
+                <div class="co-header"><i class="bi bi-pie-chart text-primary"></i>Kaynak Dağılımı</div>
+                <div class="co-body">
+                    <div class="bar-chart-wrap" id="analiz-kaynak"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-ofi h-100">
+                <div class="co-header"><i class="bi bi-bar-chart text-primary"></i>Durum Dağılımı</div>
+                <div class="co-body">
+                    <div class="bar-chart-wrap" id="analiz-durum"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-ofi h-100">
+                <div class="co-header"><i class="bi bi-building text-primary"></i>Birim Dağılımı</div>
+                <div class="co-body">
+                    <div class="bar-chart-wrap" id="analiz-birim"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-ofi mt-3">
+        <div class="co-header"><i class="bi bi-graph-up text-primary"></i>Aylık Öneri Trendi ({{ now.year if now else 2025 }})</div>
+        <div class="co-body">
+            <div id="analiz-trend" style="display:flex;align-items:flex-end;gap:6px;height:120px;padding-bottom:4px;"></div>
+            <div id="analiz-trend-labels" style="display:flex;gap:6px;font-size:10px;color:var(--muted);margin-top:4px;"></div>
+        </div>
+    </div>
+
+    <div class="card-ofi mt-3">
+        <div class="co-header"><i class="bi bi-calculator text-primary"></i>Özet İstatistikler</div>
+        <div class="co-body">
+            <div class="row g-3" id="analiz-ozet"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ PANEL 3: TAKVİM ══════════════════════════════════════════ -->
+<div id="ofi-panel-takvim" class="ofi-panel">
+    <div class="card-ofi">
+        <div class="co-header">
+            <i class="bi bi-calendar-range text-primary"></i>Takvim
+            <select class="form-select form-select-sm ms-auto" style="width:auto;font-size:11px;" id="takvim-ay" onchange="takvimiYenile()">
+                <option value="0">Ocak</option><option value="1">Şubat</option>
+                <option value="2">Mart</option><option value="3">Nisan</option>
+                <option value="4">Mayıs</option><option value="5">Haziran</option>
+                <option value="6">Temmuz</option><option value="7">Ağustos</option>
+                <option value="8">Eylül</option><option value="9">Ekim</option>
+                <option value="10">Kasım</option><option value="11">Aralık</option>
+            </select>
+            <select class="form-select form-select-sm ms-1" style="width:auto;font-size:11px;" id="takvim-yil" onchange="takvimiYenile()">
+                <option>2025</option><option>2026</option>
+            </select>
+            <button class="btn btn-sm ms-2" style="background:#7c3aed;color:#fff;font-size:11px;padding:3px 10px;border:none;border-radius:6px;"
+                onclick="etkinlikEkleModalAc()">
+                <i class="bi bi-plus-circle me-1"></i>Etkinlik Ekle
+            </button>
+        </div>
+        <div class="co-body">
+            <!-- Renk açıklaması -->
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;">
+                <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#2563eb;vertical-align:middle;margin-right:4px;"></span>Öneri başlangıcı</span>
+                <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#16a34a;vertical-align:middle;margin-right:4px;"></span>Uygulama aralığı</span>
+                <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#dc2626;vertical-align:middle;margin-right:4px;"></span>Hedef/bitiş tarihi</span>
+                <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#7c3aed;vertical-align:middle;margin-right:4px;"></span>Bağımsız etkinlik</span>
+            </div>
+            <div id="takvim-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+        </div>
+    </div>
+
+    <div class="card-ofi mt-3">
+        <div class="co-header"><i class="bi bi-list-task text-primary"></i>Bu Aya Ait Öneri & Etkinlikler</div>
+        <div class="co-body p-0" style="overflow-x:auto;">
+            <table class="ofi-table">
+                <thead>
+                    <tr><th>#</th><th>Tür</th><th>No / Başlık</th><th>Açıklama / Not</th><th>Birim</th><th>Başlangıç</th><th>Hedef Tarih</th><th>Durum</th></tr>
+                </thead>
+                <tbody id="takvim-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ══ PANEL 4: MATRİS ══════════════════════════════════════════ -->
+<div id="ofi-panel-matris" class="ofi-panel">
+    <div class="card-ofi">
+        <div class="co-header"><i class="bi bi-grid-3x3 text-primary"></i>Etki / Uygulama Kolaylığı — 3×3 Öncelik Matrisi</div>
+        <div class="co-body">
+            <!-- Başlık satırı -->
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;padding-left:84px;">
+                <div style="flex:1;text-align:center;font-size:10px;font-weight:700;color:#16a34a;">Kolay Uygulanabilir</div>
+                <div style="flex:1;text-align:center;font-size:10px;font-weight:700;color:#d97706;">Orta Güçlük</div>
+                <div style="flex:1;text-align:center;font-size:10px;font-weight:700;color:#dc2626;">Zor Uygulanabilir</div>
+            </div>
+            <!-- Sol eksen + hücreler -->
+            <div style="display:flex;gap:4px;">
+                <!-- Sol eksen -->
+                <div style="display:flex;flex-direction:column;gap:4px;width:80px;flex-shrink:0;">
+                    <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:10px;font-weight:700;color:#dc2626;text-align:right;min-height:110px;">Yüksek Etki</div>
+                    <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:10px;font-weight:700;color:#d97706;text-align:right;min-height:110px;">Orta Etki</div>
+                    <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:10px;font-weight:700;color:#16a34a;text-align:right;min-height:110px;">Düşük Etki</div>
+                </div>
+                <!-- 9 hücre -->
+                <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:4px;">
+                    <!-- Satır 1: Yüksek Etki -->
+                    <!-- [Yüksek Etki / Kolay] → En öncelikli -->
+                    <div class="matris-hucre" style="background:#dcfce7;border:1px solid #86efac;" id="mh-31">
+                        <div class="matris-hucre-baslik" style="color:#15803d;">⭐ Hemen Yap</div>
+                        <div class="matris-hucre-items" id="mhi-31"></div>
+                    </div>
+                    <!-- [Yüksek Etki / Orta] -->
+                    <div class="matris-hucre" style="background:#fef9c3;border:1px solid #fde68a;" id="mh-32">
+                        <div class="matris-hucre-baslik" style="color:#92400e;">🟡 Planla</div>
+                        <div class="matris-hucre-items" id="mhi-32"></div>
+                    </div>
+                    <!-- [Yüksek Etki / Zor] -->
+                    <div class="matris-hucre" style="background:#fff7ed;border:1px solid #fed7aa;" id="mh-33">
+                        <div class="matris-hucre-baslik" style="color:#c2410c;">🔶 Büyük Proje</div>
+                        <div class="matris-hucre-items" id="mhi-33"></div>
+                    </div>
+                    <!-- Satır 2: Orta Etki -->
+                    <!-- [Orta Etki / Kolay] -->
+                    <div class="matris-hucre" style="background:#eff6ff;border:1px solid #bfdbfe;" id="mh-21">
+                        <div class="matris-hucre-baslik" style="color:#1d4ed8;">🔵 Kolay Kazan</div>
+                        <div class="matris-hucre-items" id="mhi-21"></div>
+                    </div>
+                    <!-- [Orta Etki / Orta] → Standart -->
+                    <div class="matris-hucre" style="background:#f8fafc;border:1px solid #e2e8f0;" id="mh-22">
+                        <div class="matris-hucre-baslik" style="color:#64748b;">⬜ Standart</div>
+                        <div class="matris-hucre-items" id="mhi-22"></div>
+                    </div>
+                    <!-- [Orta Etki / Zor] -->
+                    <div class="matris-hucre" style="background:#fef2f2;border:1px solid #fca5a5;" id="mh-23">
+                        <div class="matris-hucre-baslik" style="color:#b91c1c;">🔴 Dikkatli Değerlendir</div>
+                        <div class="matris-hucre-items" id="mhi-23"></div>
+                    </div>
+                    <!-- Satır 3: Düşük Etki -->
+                    <!-- [Düşük Etki / Kolay] -->
+                    <div class="matris-hucre" style="background:#f0fdf4;border:1px solid #bbf7d0;" id="mh-11">
+                        <div class="matris-hucre-baslik" style="color:#15803d;">🟢 Yapılabilir</div>
+                        <div class="matris-hucre-items" id="mhi-11"></div>
+                    </div>
+                    <!-- [Düşük Etki / Orta] -->
+                    <div class="matris-hucre" style="background:#f1f5f9;border:1px solid #cbd5e1;" id="mh-12">
+                        <div class="matris-hucre-baslik" style="color:#64748b;">⚪ Düşük Öncelik</div>
+                        <div class="matris-hucre-items" id="mhi-12"></div>
+                    </div>
+                    <!-- [Düşük Etki / Zor] → En düşük öncelik -->
+                    <div class="matris-hucre" style="background:#fee2e2;border:1px solid #fca5a5;" id="mh-13">
+                        <div class="matris-hucre-baslik" style="color:#b91c1c;">❌ Sorgula</div>
+                        <div class="matris-hucre-items" id="mhi-13"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Alt eksen -->
+            <div style="display:flex;margin-top:4px;padding-left:84px;">
+                <div style="flex:1;text-align:center;font-size:9px;color:var(--muted);">← Uygulama Kolaylığı →</div>
+            </div>
+            <!-- Açıklama -->
+            <div style="margin-top:10px;font-size:11px;color:var(--muted);background:#f8fafc;border-radius:6px;padding:8px 12px;">
+                Satırlar: <strong>Etki düzeyi</strong> (Yüksek → Düşük) &nbsp;|&nbsp;
+                Sütunlar: <strong>Uygulama kolaylığı</strong> (Kolay → Zor) &nbsp;|&nbsp;
+                Hücreler kaydırılabilir — çok veri geldiğinde scroll açılır.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ MODAL: Öneri Ekle / Düzenle ══════════════════════════════ -->
+<div class="modal fade" id="ofiEkleModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content" style="border-radius:12px;border:none;">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white" id="ofiModalBaslik">
+            <i class="bi bi-plus-circle me-2"></i>İyileştirme Önerisi Ekle
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="ofi-form-idx" value="">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <label class="ofi-form-label">Öneri No</label>
+                <input id="of-no" class="form-control form-control-sm" placeholder="OFI-01" required>
+            </div>
+            <div class="col-md-3">
+                <label class="ofi-form-label">Kaynak</label>
+                <select id="of-kaynak" class="form-select form-select-sm">
+                    <option>İç Denetim</option>
+                    <option>Dış Denetim</option>
+                    <option>Manuel</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="ofi-form-label">Denetim Adı / Kodu</label>
+                <input id="of-denetim-adi" class="form-control form-control-sm" placeholder="Ör: 2025-İD-001">
+            </div>
+            <div class="col-md-3">
+                <label class="ofi-form-label">Denetim Tarihi</label>
+                <input type="date" id="of-denetim-tarihi" class="form-control form-control-sm">
+            </div>
+
+            <div class="col-md-10">
+                <label class="ofi-form-label">Öneri / Gözlem Açıklaması</label>
+                <textarea id="of-aciklama" class="form-control form-control-sm" rows="2" placeholder="Öneri açıklamasını giriniz..." required></textarea>
+            </div>
+
+            <div class="col-md-3">
+                <label class="ofi-form-label">İlgili Birim</label>
+                <input id="of-birim" class="form-control form-control-sm" placeholder="Müdürlük / Birim">
+            </div>
+            <div class="col-md-3">
+                <label class="ofi-form-label">Sorumlu Kişi</label>
+                <input id="of-sorumlu" class="form-control form-control-sm" placeholder="Ad Soyad / Unvan">
+            </div>
+            <div class="col-md-2">
+                <label class="ofi-form-label">Başlangıç Tarihi</label>
+                <input type="date" id="of-baslangic-tarihi" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2">
+                <label class="ofi-form-label">Hedef Kapanış</label>
+                <input type="date" id="of-hedef-tarih" class="form-control form-control-sm">
+            </div>
+
+            <div class="col-md-2">
+                <label class="ofi-form-label">Öncelik</label>
+                <select id="of-oncelik" class="form-select form-select-sm">
+                    <option>Yüksek</option>
+                    <option selected>Orta</option>
+                    <option>Düşük</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="ofi-form-label">Durum</label>
+                <select id="of-durum" class="form-select form-select-sm">
+                    <option>Değerlendirmede</option>
+                    <option>Uygulamada</option>
+                    <option>Tamamlandı</option>
+                    <option>Gecikti</option>
+                    <option>İptal</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="ofi-form-label">Tamamlanma %</label>
+                <input type="number" id="of-tamamlanma" class="form-control form-control-sm" min="0" max="100" value="0">
+            </div>
+            <div class="col-md-2">
+                <label class="ofi-form-label">Etki (1-3)</label>
+                <select id="of-etki" class="form-select form-select-sm">
+                    <option value="1">1 - Düşük</option>
+                    <option value="2" selected>2 - Orta</option>
+                    <option value="3">3 - Yüksek</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="ofi-form-label">Uygulama Kolaylığı</label>
+                <select id="of-kolaylik" class="form-select form-select-sm">
+                    <option value="1">1 - Zor</option>
+                    <option value="2" selected>2 - Orta</option>
+                    <option value="3">3 - Kolay</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="ofi-form-label">Uygulanan / Planlanan Aksiyon</label>
+                <textarea id="of-aksiyon" class="form-control form-control-sm" rows="2" placeholder="Aksiyon notları..."></textarea>
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+          <button type="button" class="btn btn-sm" style="background:#2563eb;color:#fff;" onclick="ofiKaydet()">
+              <i class="bi bi-check2 me-1"></i>Kaydet
+          </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Öneri Detay ══════════════════════════════════════ -->
+<div class="modal fade" id="ofiDetayModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="border-radius:12px;border:none;">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white" id="detay-modal-baslik">
+            <i class="bi bi-lightbulb me-2"></i>Öneri Detayı
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="detay-modal-icerik"></div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Kapat</button>
+          <button type="button" class="btn btn-sm admin-ozel" style="background:#2563eb;color:#fff;" id="detay-duzenle-btn">
+              <i class="bi bi-pencil me-1"></i>Düzenle
+          </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Bağımsız Etkinlik Ekle ══════════════════════════ -->
+<div class="modal fade" id="etkinlikEkleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:12px;border:none;">
+      <div class="modal-header" style="background:#7c3aed;">
+        <h5 class="modal-title text-white"><i class="bi bi-calendar-plus me-2"></i>Etkinlik Ekle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="etk-idx" value="">
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="ofi-form-label">Etkinlik Başlığı</label>
+                <input id="etk-baslik" class="form-control form-control-sm" placeholder="Toplantı, ziyaret, denetim..." required>
+            </div>
+            <div class="col-md-6">
+                <label class="ofi-form-label">Başlangıç Tarihi</label>
+                <input type="date" id="etk-baslangic" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-6">
+                <label class="ofi-form-label">Bitiş Tarihi</label>
+                <input type="date" id="etk-bitis" class="form-control form-control-sm">
+            </div>
+            <div class="col-12">
+                <label class="ofi-form-label">Not</label>
+                <textarea id="etk-not" class="form-control form-control-sm" rows="2" placeholder="Açıklama..."></textarea>
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+          <button type="button" class="btn btn-sm" style="background:#7c3aed;color:#fff;border:none;" onclick="etkinlikKaydet()">
+              <i class="bi bi-check2 me-1"></i>Kaydet
+          </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   VERİ DEPOSU
+══════════════════════════════════════════════════════════════ */
+let backendOneriler = [
+    {% for ofi in iyilestirme_onerileri if iyilestirme_onerileri is defined %}
+    {
+        id:               {{ ofi.id }},
+        no:               "{{ ofi.oneri_no }}",
+        kaynak:           "{{ ofi.kaynak if ofi.kaynak else 'Dış Denetim' }}",
+        denetimAdi:       "{{ ofi.denetim_adi if ofi.denetim_adi else '' }}",
+        denetimTarihi:    "{{ ofi.denetim_tarihi if ofi.denetim_tarihi else '' }}",
+        madde:            "{{ ofi.ilgili_madde if ofi.ilgili_madde else '' }}",
+        aciklama:         "{{ ofi.aciklama | replace('"', '\\"') }}",
+        birim:            "{{ ofi.ilgili_birim if ofi.ilgili_birim else '' }}",
+        sorumlu:          "{{ ofi.sorumlu if ofi.sorumlu else '' }}",
+        baslangicTarihi:  "{{ ofi.baslangic_tarihi if ofi.baslangic_tarihi else '' }}",
+        hedefTarih:       "{{ ofi.hedef_tarih if ofi.hedef_tarih else '' }}",
+        oncelik:          "{{ ofi.oncelik if ofi.oncelik else 'Orta' }}",
+        durum:            "{{ ofi.durum if ofi.durum else 'Değerlendirmede' }}",
+        tamamlanma:       {{ ofi.tamamlanma if ofi.tamamlanma is defined else 0 }},
+        aksiyon:          "{{ ofi.aksiyon if ofi.aksiyon else '' }}",
+        etki:             {{ ofi.etki if ofi.etki is defined else 2 }},
+        kolaylik:         {{ ofi.kolaylik if ofi.kolaylik is defined else 2 }},
+        backend: true
+    },
+    {% else %}
+    { id:1, no:'OFI-01', kaynak:'Dış Denetim', denetimAdi:'2025 Gözetim Denetimi', denetimTarihi:'2025-03-15', madde:'7.1.6', aciklama:'Kurumsal bilgi birikiminin dijital platformda daha sistematik tutulması önerilir.', birim:'Bilgi İşlem', sorumlu:'Ahmet Yılmaz', baslangicTarihi:'2025-03-15', hedefTarih:'2025-06-30', oncelik:'Yüksek', durum:'Uygulamada', tamamlanma:60, aksiyon:'Doküman yönetim sistemi entegrasyonu planlandı.', etki:3, kolaylik:2, backend:false },
+    { id:2, no:'OFI-02', kaynak:'Dış Denetim', denetimAdi:'2025 Gözetim Denetimi', denetimTarihi:'2025-03-15', madde:'9.1.3', aciklama:'Müşteri memnuniyeti anket sonuçlarının yönetim gözden geçirme toplantılarına düzenli aktarılması önerilir.', birim:'Kalite Müdürlüğü', sorumlu:'Ayşe Kaya', baslangicTarihi:'2025-03-15', hedefTarih:'2025-05-31', oncelik:'Orta', durum:'Tamamlandı', tamamlanma:100, aksiyon:'MGG gündemine eklendi.', etki:2, kolaylik:3, backend:false },
+    { id:3, no:'OFI-03', kaynak:'İç Denetim', denetimAdi:'İK Müdürlüğü İç Denetimi', denetimTarihi:'2025-04-10', madde:'7.2', aciklama:'Eğitim etkinlik değerlendirme formlarının sistematik analiz edilmesi önerilir.', birim:'İnsan Kaynakları Müdürlüğü', sorumlu:'Mehmet Demir', baslangicTarihi:'2025-04-10', hedefTarih:'2025-07-15', oncelik:'Orta', durum:'Değerlendirmede', tamamlanma:0, aksiyon:'', etki:2, kolaylik:2, backend:false },
+    { id:4, no:'OFI-04', kaynak:'İç Denetim', denetimAdi:'Mali İşler İç Denetimi', denetimTarihi:'2025-02-20', madde:'8.4', aciklama:'Tedarikçi değerlendirme kriterlerinin güncellenmesi önerilir.', birim:'Satın Alma Birimi', sorumlu:'Fatma Şahin', baslangicTarihi:'2025-02-20', hedefTarih:'2025-04-30', oncelik:'Yüksek', durum:'Gecikti', tamamlanma:20, aksiyon:'Tedarikçi listesi güncelleniyor.', etki:3, kolaylik:1, backend:false },
+    { id:5, no:'OFI-05', kaynak:'Dış Denetim', denetimAdi:'2025 Gözetim Denetimi', denetimTarihi:'2025-03-15', madde:'6.1', aciklama:'Risk değerlendirme metodolojisinin daha kapsamlı bir formata getirilmesi tavsiye edilir.', birim:'Kalite Müdürlüğü', sorumlu:'Ahmet Yılmaz', baslangicTarihi:'2025-03-15', hedefTarih:'2025-08-31', oncelik:'Düşük', durum:'Değerlendirmede', tamamlanma:0, aksiyon:'', etki:1, kolaylik:2, backend:false },
+    {% endfor %}
+];
+
+// Bağımsız etkinlikler — localStorage ile kalıcı
+let bagimsizEtkinlikler = JSON.parse(localStorage.getItem('ofi_etkinlikler') || '[]');
+
+let oneriler = [...backendOneriler];
+let aktifIdx = null;
+
+/* ══════════════════════════════════════════════════════════════
+   DURUM HESAPLAMA — Otomatik (tarih bazlı)
+══════════════════════════════════════════════════════════════ */
+function otomatikDurum(o) {
+    // İptal veya manuel tamamlandı ise koru
+    if (o.durum === 'İptal') return 'İptal';
+    if (o.durum === 'Tamamlandı') return 'Tamamlandı';
+
+    const bugun = new Date();
+    bugun.setHours(0,0,0,0);
+
+    const bas  = o.baslangicTarihi ? new Date(o.baslangicTarihi) : null;
+    const bitis = o.hedefTarih     ? new Date(o.hedefTarih)      : null;
+
+    if (bas) bas.setHours(0,0,0,0);
+    if (bitis) bitis.setHours(0,0,0,0);
+
+    if (bitis && bugun > bitis) return 'Gecikti';
+    if (bas && bugun >= bas && (!bitis || bugun <= bitis)) return 'Uygulamada';
+    return 'Değerlendirmede';
+}
+
+function geciktiGunSayisi(hedefTarih) {
+    if (!hedefTarih) return 0;
+    const bugun = new Date(); bugun.setHours(0,0,0,0);
+    const bitis = new Date(hedefTarih); bitis.setHours(0,0,0,0);
+    const fark = Math.floor((bugun - bitis) / (1000*60*60*24));
+    return fark > 0 ? fark : 0;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   YARDIMCI FONKSİYONLAR
+══════════════════════════════════════════════════════════════ */
+function kaynakBadge(kaynak) {
+    const map = { 'İç Denetim': 'ic', 'Dış Denetim': 'dis', 'Manuel': 'man' };
+    const cls = map[kaynak] || 'man';
+    const ikon = kaynak==='İç Denetim'?'clipboard-check':kaynak==='Dış Denetim'?'building-check':'pencil-square';
+    return `<span class="kaynak-badge ${cls}"><i class="bi bi-${ikon}"></i>${kaynak}</span>`;
+}
+
+function durumBadge(durum, hedefTarih) {
+    const map = { 'Değerlendirmede':'bekliyor','Uygulamada':'devam','Tamamlandı':'tamamlandi','Gecikti':'gecikti','İptal':'iptal' };
+    const cls = map[durum] || 'bekliyor';
+    let ekstra = '';
+    if (durum === 'Gecikti' && hedefTarih) {
+        const gun = geciktiGunSayisi(hedefTarih);
+        if (gun > 0) ekstra = ` <span class="gecikti-gun">(+${gun} gün)</span>`;
+    }
+    return `<span class="durum-badge ${cls}">${durum}</span>${ekstra}`;
+}
+
+function oncelikBadge(onc) {
+    const map = { 'Yüksek':'yuksek','Orta':'orta','Düşük':'dusuk' };
+    return `<span class="onc-badge ${map[onc]||'orta'}">${onc}</span>`;
+}
+
+function ilerlemeCubugu(pct) {
+    const renk = pct >= 100 ? '#16a34a' : pct >= 50 ? '#2563eb' : pct > 0 ? '#d97706' : '#e2e8f0';
+    return `<div class="ilerleme-wrap"><div class="ilerleme-fill" style="width:${pct}%;background:${renk};"></div></div>
+            <div style="font-size:10px;color:var(--muted);text-align:right;">${pct}%</div>`;
+}
+
+function formatTarih(tarih) {
+    if (!tarih) return '—';
+    try { return new Date(tarih).toLocaleDateString('tr-TR'); } catch { return tarih; }
+}
+
+function tarihStr(tarih) {
+    if (!tarih) return '';
+    if (typeof tarih === 'string') return tarih.substring(0,10);
+    return tarih.toISOString().substring(0,10);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   KPI GÜNCELLEME
+══════════════════════════════════════════════════════════════ */
+function kpiGuncelle() {
+    const toplam     = oneriler.length;
+    const hesapla    = o => otomatikDurum(o);
+    const bekliyor   = oneriler.filter(o => hesapla(o) === 'Değerlendirmede').length;
+    const devam      = oneriler.filter(o => hesapla(o) === 'Uygulamada').length;
+    const tamamlandi = oneriler.filter(o => o.durum === 'Tamamlandı').length;
+    const gecikti    = oneriler.filter(o => hesapla(o) === 'Gecikti').length;
+    const oran       = toplam ? Math.round(tamamlandi / toplam * 100) : 0;
+    document.getElementById('kpi-toplam').textContent     = toplam;
+    document.getElementById('kpi-bekliyor').textContent   = bekliyor;
+    document.getElementById('kpi-devam').textContent      = devam;
+    document.getElementById('kpi-tamamlandi').textContent = tamamlandi;
+    document.getElementById('kpi-gecikti').textContent    = gecikti;
+    document.getElementById('kpi-tamamlanma').textContent = oran + '%';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TABLO RENDER
+══════════════════════════════════════════════════════════════ */
+function tabloYenile(veri) {
+    const tbody = document.getElementById('ofi-tbody');
+    if (!veri.length) {
+        tbody.innerHTML = '<tr><td colspan="13" class="text-center text-muted py-4">Öneri kaydı bulunamadı.</td></tr>';
+        document.getElementById('liste-sayac').textContent = '0 kayıt';
+        return;
+    }
+    tbody.innerHTML = veri.map((o, i) => {
+        const gercekDurum = otomatikDurum(o);
+        return `
+        <tr>
+            <td>${i+1}</td>
+            <td><strong>${o.no}</strong></td>
+            <td>${kaynakBadge(o.kaynak)}</td>
+            <td style="font-size:11px;">
+                <div style="font-weight:600;">${o.denetimAdi || '—'}</div>
+                <div style="color:var(--muted);">${formatTarih(o.denetimTarihi)}</div>
+            </td>
+            <td style="max-width:200px;font-size:12px;">${o.aciklama}</td>
+            <td style="font-size:12px;">${o.birim || '—'}</td>
+            <td>${oncelikBadge(o.oncelik)}</td>
+            <td style="font-size:12px;">${o.sorumlu || '—'}</td>
+            <td style="font-size:11px;white-space:nowrap;">${formatTarih(o.baslangicTarihi)}</td>
+            <td style="font-size:11px;white-space:nowrap;">${formatTarih(o.hedefTarih)}</td>
+            <td>${durumBadge(gercekDurum, o.hedefTarih)}</td>
+            <td style="min-width:100px;">${ilerlemeCubugu(o.tamamlanma || 0)}</td>
+            <td>
+                <div class="d-flex gap-1 flex-wrap">
+                    <button class="btn-aksiyon btn-goruntule" onclick="detayGoster(${oneriler.indexOf(o)})" title="Detay"><i class="bi bi-eye"></i></button>
+                    <button class="btn-aksiyon btn-duzenle admin-ozel" onclick="ofiDuzenleAc(${oneriler.indexOf(o)})" title="Düzenle"><i class="bi bi-pencil"></i></button>
+                    ${gercekDurum !== 'Tamamlandı' && gercekDurum !== 'İptal'
+                        ? `<button class="btn-aksiyon btn-tamamla admin-ozel" onclick="oneriTamamla(${oneriler.indexOf(o)})" title="Tamamlandı işaretle"><i class="bi bi-check-circle"></i></button>
+                           <button class="btn-aksiyon btn-iptal-on admin-ozel" onclick="oneriIptal(${oneriler.indexOf(o)})" title="İptal et"><i class="bi bi-x-circle"></i></button>`
+                        : ''}
+                    <button class="btn-aksiyon btn-sil admin-ozel" onclick="ofiSil(${oneriler.indexOf(o)})" title="Sil"><i class="bi bi-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+    document.getElementById('liste-sayac').textContent = veri.length + ' kayıt';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FİLTRELEME
+══════════════════════════════════════════════════════════════ */
+function birimFiltreDoldur() {
+    const birimler = [...new Set(oneriler.map(o => o.birim).filter(Boolean))].sort();
+    const sel = document.getElementById('filtre-birim');
+    const mevcut = sel.value;
+    sel.innerHTML = '<option value="">Tümü</option>' +
+        birimler.map(b => `<option value="${b}"${b===mevcut?' selected':''}>${b}</option>`).join('');
+}
+
+function ofiFiltrele() {
+    const kaynak  = document.getElementById('filtre-kaynak').value;
+    const durum   = document.getElementById('filtre-durum').value;
+    const oncelik = document.getElementById('filtre-oncelik').value;
+    const birim   = document.getElementById('filtre-birim').value;
+    const ara     = document.getElementById('filtre-ara').value.toLowerCase();
+
+    const filtreli = oneriler.filter(o => {
+        const gercekDurum = otomatikDurum(o);
+        if (kaynak  && o.kaynak    !== kaynak)   return false;
+        if (durum   && gercekDurum !== durum)    return false;
+        if (oncelik && o.oncelik   !== oncelik)  return false;
+        if (birim   && o.birim     !== birim)    return false;
+        if (ara) {
+            const meta = [o.no, o.madde, o.aciklama, o.birim, o.sorumlu, o.denetimAdi].join(' ').toLowerCase();
+            if (!meta.includes(ara)) return false;
+        }
+        return true;
+    });
+    tabloYenile(filtreli);
+}
+
+function filtreleriSifirla() {
+    ['filtre-kaynak','filtre-durum','filtre-oncelik','filtre-birim'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('filtre-ara').value = '';
+    tabloYenile(oneriler);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TAMAMLA / İPTAL hızlı işlemler
+══════════════════════════════════════════════════════════════ */
+async function oneriTamamla(idx) {
+    if (!confirm('Bu öneriyi tamamlandı olarak işaretlemek istiyor musunuz?')) return;
+    oneriler[idx].durum      = 'Tamamlandı';
+    oneriler[idx].tamamlanma = 100;
+    await _backendGuncelle(idx);
+    tumunuYenile();
+}
+
+async function oneriIptal(idx) {
+    if (!confirm('Bu öneriyi iptal etmek istiyor musunuz?')) return;
+    oneriler[idx].durum = 'İptal';
+    await _backendGuncelle(idx);
+    tumunuYenile();
+}
+
+async function _backendGuncelle(idx) {
+    const o = oneriler[idx];
+    if (!o.backend) return; // sadece backend kayıtlarını gönder
+    try {
+        await fetch(`/oneriler/${o.id}/guncelle`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                oneri_no: o.no, kaynak: o.kaynak, denetim_adi: o.denetimAdi,
+                denetim_tarihi: o.denetimTarihi, ilgili_madde: o.madde,
+                aciklama: o.aciklama, ilgili_birim: o.birim, sorumlu: o.sorumlu,
+                baslangic_tarihi: o.baslangicTarihi, hedef_tarih: o.hedefTarih,
+                oncelik: o.oncelik, durum: o.durum, tamamlanma: o.tamamlanma,
+                etki: o.etki, kolaylik: o.kolaylik, aksiyon: o.aksiyon
+            })
+        });
+    } catch(e) { console.warn('Backend güncelleme hatası:', e); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DETAY MODAL
+══════════════════════════════════════════════════════════════ */
+function detayGoster(idx) {
+    aktifIdx = idx;
+    const o = oneriler[idx];
+    const gercekDurum = otomatikDurum(o);
+
+    document.getElementById('detay-modal-baslik').innerHTML =
+        `<i class="bi bi-lightbulb me-2"></i>${o.no} — ${o.aciklama.substring(0,50)}${o.aciklama.length>50?'...':''}`;
+
+    const aksiyonlar = o.aksiyon ? o.aksiyon.split('\n').filter(Boolean) : [];
+    const tlHtml = aksiyonlar.length
+        ? `<div class="timeline">${aksiyonlar.map(a => `
+            <div class="tl-item">
+                <div class="tl-dot ${gercekDurum==='Tamamlandı'?'green':''}"></div>
+                <div class="tl-content">${a}</div>
+                <div class="tl-meta">${formatTarih(o.hedefTarih)} · ${o.sorumlu||'—'}</div>
+            </div>`).join('')}</div>`
+        : '<p class="text-muted" style="font-size:12px;">Henüz aksiyon kaydı bulunmuyor.</p>';
+
+    document.getElementById('detay-modal-icerik').innerHTML = `
+    <div class="bilgi-satir">
+        <div class="bilgi-item"><span class="bl">Öneri No</span><span class="bv">${o.no}</span></div>
+        <div class="bilgi-item"><span class="bl">Kaynak</span><span class="bv">${kaynakBadge(o.kaynak)}</span></div>
+        <div class="bilgi-item"><span class="bl">Denetim Adı</span><span class="bv">${o.denetimAdi||'—'}</span></div>
+        <div class="bilgi-item"><span class="bl">Denetim Tarihi</span><span class="bv">${formatTarih(o.denetimTarihi)}</span></div>
+    </div>
+    <div class="detail-row"><div class="dr-label">Açıklama</div><div class="dr-val">${o.aciklama}</div></div>
+    <div class="detail-row"><div class="dr-label">İlgili Birim</div><div class="dr-val">${o.birim||'—'}</div></div>
+    <div class="detail-row"><div class="dr-label">Sorumlu</div><div class="dr-val">${o.sorumlu||'—'}</div></div>
+    <div class="detail-row"><div class="dr-label">Başlangıç Tarihi</div><div class="dr-val">${formatTarih(o.baslangicTarihi)}</div></div>
+    <div class="detail-row"><div class="dr-label">Hedef Tarih</div><div class="dr-val">${formatTarih(o.hedefTarih)}</div></div>
+    <div class="detail-row"><div class="dr-label">Öncelik</div><div class="dr-val">${oncelikBadge(o.oncelik)}</div></div>
+    <div class="detail-row"><div class="dr-label">Durum</div><div class="dr-val">${durumBadge(gercekDurum, o.hedefTarih)}</div></div>
+    <div class="detail-row">
+        <div class="dr-label">Tamamlanma</div>
+        <div class="dr-val" style="flex:1;">${ilerlemeCubugu(o.tamamlanma||0)}</div>
+    </div>
+    <hr>
+    <div class="fw-bold mb-2" style="font-size:13px;"><i class="bi bi-clock-history me-1 text-primary"></i>Aksiyon Kaydı</div>
+    ${tlHtml}`;
+
+    document.getElementById('detay-duzenle-btn').onclick = function() {
+        bootstrap.Modal.getInstance(document.getElementById('ofiDetayModal')).hide();
+        setTimeout(() => ofiDuzenleAc(idx), 300);
+    };
+    new bootstrap.Modal(document.getElementById('ofiDetayModal')).show();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CRUD
+══════════════════════════════════════════════════════════════ */
+function ofiModalAc() {
+    aktifIdx = null;
+    document.getElementById('ofiModalBaslik').innerHTML = '<i class="bi bi-plus-circle me-2"></i>İyileştirme Önerisi Ekle';
+    ['of-no','of-denetim-adi','of-aciklama','of-birim','of-sorumlu','of-aksiyon'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
+    document.getElementById('of-denetim-tarihi').value  = '';
+    document.getElementById('of-baslangic-tarihi').value = '';
+    document.getElementById('of-hedef-tarih').value     = '';
+    document.getElementById('of-kaynak').value   = 'Manuel';
+    document.getElementById('of-durum').value    = 'Değerlendirmede';
+    document.getElementById('of-oncelik').value  = 'Orta';
+    document.getElementById('of-tamamlanma').value = '0';
+    document.getElementById('of-etki').value     = '2';
+    document.getElementById('of-kolaylik').value = '2';
+    new bootstrap.Modal(document.getElementById('ofiEkleModal')).show();
+}
+
+function ofiDuzenleAc(idx) {
+    aktifIdx = idx;
+    const o = oneriler[idx];
+    document.getElementById('ofiModalBaslik').innerHTML = '<i class="bi bi-pencil me-2"></i>Öneri Düzenle';
+    document.getElementById('of-no').value               = o.no;
+    document.getElementById('of-kaynak').value           = o.kaynak;
+    document.getElementById('of-denetim-adi').value      = o.denetimAdi||'';
+    document.getElementById('of-denetim-tarihi').value   = o.denetimTarihi||'';
+    document.getElementById('of-aciklama').value         = o.aciklama;
+    document.getElementById('of-birim').value            = o.birim||'';
+    document.getElementById('of-sorumlu').value          = o.sorumlu||'';
+    document.getElementById('of-baslangic-tarihi').value = o.baslangicTarihi||'';
+    document.getElementById('of-hedef-tarih').value      = o.hedefTarih||'';
+    document.getElementById('of-oncelik').value          = o.oncelik;
+    document.getElementById('of-durum').value            = o.durum;
+    document.getElementById('of-tamamlanma').value       = o.tamamlanma||0;
+    document.getElementById('of-etki').value             = o.etki||2;
+    document.getElementById('of-kolaylik').value         = o.kolaylik||2;
+    document.getElementById('of-aksiyon').value          = o.aksiyon||'';
+    new bootstrap.Modal(document.getElementById('ofiEkleModal')).show();
+}
+
+async function ofiKaydet() {
+    const veri = {
+        oneri_no:         document.getElementById('of-no').value.trim(),
+        kaynak:           document.getElementById('of-kaynak').value,
+        denetim_adi:      document.getElementById('of-denetim-adi').value.trim(),
+        denetim_tarihi:   document.getElementById('of-denetim-tarihi').value,
+        aciklama:         document.getElementById('of-aciklama').value.trim(),
+        ilgili_birim:     document.getElementById('of-birim').value.trim(),
+        sorumlu:          document.getElementById('of-sorumlu').value.trim(),
+        baslangic_tarihi: document.getElementById('of-baslangic-tarihi').value,
+        hedef_tarih:      document.getElementById('of-hedef-tarih').value,
+        oncelik:          document.getElementById('of-oncelik').value,
+        durum:            document.getElementById('of-durum').value,
+        tamamlanma:       parseInt(document.getElementById('of-tamamlanma').value) || 0,
+        etki:             parseInt(document.getElementById('of-etki').value),
+        kolaylik:         parseInt(document.getElementById('of-kolaylik').value),
+        aksiyon:          document.getElementById('of-aksiyon').value.trim(),
+    };
+
+    if (!veri.oneri_no || !veri.aciklama) { alert('Öneri No ve Açıklama zorunludur!'); return; }
+
+    const url = aktifIdx === null
+        ? '/oneriler/ekle'
+        : `/oneriler/${oneriler[aktifIdx].id}/guncelle`;
+
+    try {
+        const yanit = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(veri)
+        });
+        const sonuc = await yanit.json();
+        if (!yanit.ok) { alert('Hata: ' + (sonuc.hata || 'Bilinmeyen hata')); return; }
+
+        bootstrap.Modal.getInstance(document.getElementById('ofiEkleModal')).hide();
+        location.reload();
+    } catch(err) {
+        // Backend yoksa lokal olarak çalış
+        const yeni = {
+            no: veri.oneri_no, kaynak: veri.kaynak, denetimAdi: veri.denetim_adi,
+            denetimTarihi: veri.denetim_tarihi, aciklama: veri.aciklama,
+            birim: veri.ilgili_birim, sorumlu: veri.sorumlu,
+            baslangicTarihi: veri.baslangic_tarihi, hedefTarih: veri.hedef_tarih,
+            oncelik: veri.oncelik, durum: veri.durum, tamamlanma: veri.tamamlanma,
+            etki: veri.etki, kolaylik: veri.kolaylik, aksiyon: veri.aksiyon, backend: false
+        };
+        if (aktifIdx === null) { yeni.id = Date.now(); oneriler.push(yeni); }
+        else { yeni.id = oneriler[aktifIdx].id; oneriler[aktifIdx] = yeni; }
+        bootstrap.Modal.getInstance(document.getElementById('ofiEkleModal')).hide();
+        tumunuYenile();
+    }
+}
+
+async function ofiSil(idx) {
+    if (!confirm('Bu öneriyi silmek istediğinize emin misiniz?')) return;
+    const o = oneriler[idx];
+    if (o.backend) {
+        try {
+            const yanit = await fetch(`/oneriler/${o.id}/sil`, { method: 'POST' });
+            if (!yanit.ok) { const s = await yanit.json(); alert('Hata: ' + (s.hata||'Silinemedi')); return; }
+            location.reload(); return;
+        } catch(e) {}
+    }
+    oneriler.splice(idx, 1);
+    tumunuYenile();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ANALİZ — birim değişince otomatik güncellenir
+══════════════════════════════════════════════════════════════ */
+function bar(label, val, max, renk) {
+    const pct = max ? Math.round(val / max * 100) : 0;
+    return `<div class="bar-item">
+        <div class="bar-label" title="${label}">${label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${renk};"></div></div>
+        <div class="bar-val">${val}</div>
+    </div>`;
+}
+
+function analizYenile() {
+    // Kaynak
+    const kaynakGrup = {};
+    oneriler.forEach(o => { kaynakGrup[o.kaynak] = (kaynakGrup[o.kaynak]||0)+1; });
+    const kmx = Math.max(...Object.values(kaynakGrup),1);
+    const renkKaynak = { 'İç Denetim':'#2563eb','Dış Denetim':'#d97706','Manuel':'#7c3aed' };
+    document.getElementById('analiz-kaynak').innerHTML =
+        Object.entries(kaynakGrup).map(([k,v]) => bar(k,v,kmx,renkKaynak[k]||'#64748b')).join('') ||
+        '<div class="text-muted" style="font-size:12px;">Veri yok</div>';
+
+    // Durum
+    const durumSira = ['Değerlendirmede','Uygulamada','Tamamlandı','Gecikti','İptal'];
+    const durumRenk = {'Değerlendirmede':'#d97706','Uygulamada':'#2563eb','Tamamlandı':'#16a34a','Gecikti':'#dc2626','İptal':'#94a3b8'};
+    const durumGrup = {};
+    oneriler.forEach(o => { const d = otomatikDurum(o); durumGrup[d] = (durumGrup[d]||0)+1; });
+    const dmx = Math.max(...Object.values(durumGrup),1);
+    document.getElementById('analiz-durum').innerHTML =
+        durumSira.filter(d => durumGrup[d]).map(d => bar(d,durumGrup[d],dmx,durumRenk[d])).join('') ||
+        '<div class="text-muted" style="font-size:12px;">Veri yok</div>';
+
+    // Birim — dinamik, oneriler değişince güncellenir
+    const birimGrup = {};
+    oneriler.forEach(o => { if(o.birim) birimGrup[o.birim]=(birimGrup[o.birim]||0)+1; });
+    const bmx = Math.max(...Object.values(birimGrup),1);
+    const birimRenkler = ['#2563eb','#16a34a','#d97706','#7c3aed','#dc2626','#0891b2','#065f46','#b45309','#1e40af','#166534'];
+    document.getElementById('analiz-birim').innerHTML =
+        Object.entries(birimGrup).sort((a,b)=>b[1]-a[1])
+            .map(([k,v],i) => bar(k,v,bmx,birimRenkler[i%birimRenkler.length])).join('') ||
+        '<div class="text-muted" style="font-size:12px;">Veri yok</div>';
+
+    // Aylık trend
+    const aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+    const aySayisi = new Array(12).fill(0);
+    oneriler.forEach(o => {
+        if (o.denetimTarihi) try { aySayisi[new Date(o.denetimTarihi).getMonth()]++; } catch{}
+    });
+    const tmx = Math.max(...aySayisi,1);
+    document.getElementById('analiz-trend').innerHTML = aySayisi.map((v,i) => `
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div style="font-size:10px;font-weight:700;color:var(--text);">${v||''}</div>
+            <div style="width:100%;height:${Math.max(v/tmx*100,2)}px;background:${v>0?'#2563eb':'#e2e8f0'};border-radius:3px 3px 0 0;min-height:4px;"></div>
+        </div>`).join('');
+    document.getElementById('analiz-trend-labels').innerHTML = aylar.map(a => `<div style="flex:1;text-align:center;">${a}</div>`).join('');
+
+    // Özet
+    const tamam  = oneriler.filter(o => o.durum==='Tamamlandı').length;
+    const toplam = oneriler.length;
+    const ortTam = toplam ? Math.round(oneriler.reduce((s,o)=>s+(o.tamamlanma||0),0)/toplam) : 0;
+    const gecikme = oneriler.filter(o => otomatikDurum(o)==='Gecikti').length;
+    const yuksek  = oneriler.filter(o => o.oncelik==='Yüksek' && o.durum!=='Tamamlandı').length;
+
+    document.getElementById('analiz-ozet').innerHTML = `
+    <div class="col-md-3"><div class="card-ofi p-3 text-center">
+        <div style="font-size:24px;font-weight:800;color:#16a34a;">${tamam}/${toplam}</div>
+        <div style="font-size:11px;color:var(--muted);">Tamamlanan / Toplam</div>
+    </div></div>
+    <div class="col-md-3"><div class="card-ofi p-3 text-center">
+        <div style="font-size:24px;font-weight:800;color:#2563eb;">${ortTam}%</div>
+        <div style="font-size:11px;color:var(--muted);">Ortalama Tamamlanma</div>
+    </div></div>
+    <div class="col-md-3"><div class="card-ofi p-3 text-center">
+        <div style="font-size:24px;font-weight:800;color:#dc2626;">${gecikme}</div>
+        <div style="font-size:11px;color:var(--muted);">Geciken Öneri</div>
+    </div></div>
+    <div class="col-md-3"><div class="card-ofi p-3 text-center">
+        <div style="font-size:24px;font-weight:800;color:#d97706;">${yuksek}</div>
+        <div style="font-size:11px;color:var(--muted);">Açık Yüksek Öncelikli</div>
+    </div></div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TAKVİM — Başlangıç→Bitiş aralığı, etkinlikler
+══════════════════════════════════════════════════════════════ */
+function takvimiYenile() {
+    const ay       = parseInt(document.getElementById('takvim-ay').value);
+    const yil      = parseInt(document.getElementById('takvim-yil').value);
+    const gunSayisi = new Date(yil, ay+1, 0).getDate();
+    const ilkGun   = new Date(yil, ay, 1).getDay();
+    const gunGunler = ['Pzt','Sal','Çrş','Per','Cum','Cmt','Paz'];
+    const bugun    = new Date(); bugun.setHours(0,0,0,0);
+
+    // O aya öneriler (başlangıç veya bitiş bu ayda olanlar)
+    const ayOneriler = oneriler.filter(o => {
+        const bas  = o.baslangicTarihi ? new Date(o.baslangicTarihi) : null;
+        const bitis = o.hedefTarih    ? new Date(o.hedefTarih)       : null;
+        if (!bas && !bitis) return false;
+        const ayBas  = new Date(yil, ay, 1);
+        const ayBit  = new Date(yil, ay+1, 0);
+        // Aralık bu ayı kesiyor mu?
+        const oBaslangic = bas  || bitis;
+        const oBitis     = bitis || bas;
+        return oBaslangic <= ayBit && oBitis >= ayBas;
+    });
+
+    // O aya etkinlikler
+    const ayEtkinlikler = bagimsizEtkinlikler.filter(e => {
+        const bas  = new Date(e.baslangic);
+        const bitis = e.bitis ? new Date(e.bitis) : bas;
+        const ayBas = new Date(yil, ay, 1);
+        const ayBit = new Date(yil, ay+1, 0);
+        return bas <= ayBit && bitis >= ayBas;
+    });
+
+    // Hücre sınıfları hesapla
+    function gunSiniflari(d) {
+        const tarih = new Date(yil, ay, d); tarih.setHours(0,0,0,0);
+        let siniflar = ['takvim-gun'];
+        if (tarih.getTime() === bugun.getTime()) siniflar.push('bugun');
+
+        for (const o of ayOneriler) {
+            const bas  = o.baslangicTarihi ? new Date(o.baslangicTarihi) : null;
+            const bitis = o.hedefTarih ? new Date(o.hedefTarih) : null;
+            if (bas) bas.setHours(0,0,0,0);
+            if (bitis) bitis.setHours(0,0,0,0);
+            if (bas && tarih.getTime()===bas.getTime())  { siniflar.push('aralik-baslangic'); break; }
+            if (bitis && tarih.getTime()===bitis.getTime()) { siniflar.push('aralik-bitis'); break; }
+            if (bas && bitis && tarih>bas && tarih<bitis)   { siniflar.push('aralik-ici'); break; }
+        }
+        return siniflar.join(' ');
+    }
+
+    // Grid oluştur
+    let html = gunGunler.map(g =>
+        `<div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px;">${g}</div>`
+    ).join('');
+
+    const bos = (ilkGun + 6) % 7;
+    for (let i=0; i<bos; i++) html += '<div></div>';
+
+    for (let d=1; d<=gunSayisi; d++) {
+        const tarih = new Date(yil, ay, d); tarih.setHours(0,0,0,0);
+        const gunOneriPilleri = ayOneriler.filter(o => {
+            const bas  = o.baslangicTarihi ? new Date(o.baslangicTarihi) : null;
+            const bitis = o.hedefTarih ? new Date(o.hedefTarih) : null;
+            if (bas) bas.setHours(0,0,0,0);
+            if (bitis) bitis.setHours(0,0,0,0);
+            return (bas && tarih.getTime()===bas.getTime()) || (bitis && tarih.getTime()===bitis.getTime());
+        });
+        const gunEtkPilleri = ayEtkinlikler.filter(e => {
+            const bas  = new Date(e.baslangic); bas.setHours(0,0,0,0);
+            const bitis = e.bitis ? new Date(e.bitis) : bas; bitis.setHours(0,0,0,0);
+            return tarih>=bas && tarih<=bitis;
+        });
+
+        const sinif = gunSiniflari(d);
+        const tikla = (gunOneriPilleri.length||gunEtkPilleri.length) ? `onclick="takvimGunTikla(${ay},${yil},${d})"` : '';
+
+        html += `<div class="${sinif}" style="cursor:${tikla?'pointer':'default'};" ${tikla}>
+            <div class="takvim-gun-no">${d}</div>
+            ${gunOneriPilleri.map(o => {
+                const bas  = o.baslangicTarihi ? new Date(o.baslangicTarihi) : null;
+                if (bas) bas.setHours(0,0,0,0);
+                const isBas = bas && tarih.getTime()===bas.getTime();
+                const renk  = isBas ? '#2563eb' : '#dc2626';
+                return `<span class="takvim-oneri-pill" style="background:${renk};color:#fff;" title="${o.no}: ${o.aciklama}">${o.no}</span>`;
+            }).join('')}
+            ${gunEtkPilleri.map(e =>
+                `<span class="takvim-etkinlik-pill" title="${e.baslik}: ${e.not||''}">${e.baslik.substring(0,8)}</span>`
+            ).join('')}
+        </div>`;
+    }
+    document.getElementById('takvim-grid').innerHTML = html;
+
+    // Alt tablo
+    const tbody = document.getElementById('takvim-tbody');
+    const satirlar = [];
+    ayOneriler.forEach((o,i) => {
+        const gercekDurum = otomatikDurum(o);
+        satirlar.push(`<tr>
+            <td>${satirlar.length+1}</td>
+            <td><span style="font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:1px 5px;">ÖNERİ</span></td>
+            <td><strong>${o.no}</strong></td>
+            <td style="font-size:12px;">${o.aciklama.substring(0,60)}${o.aciklama.length>60?'...':''}</td>
+            <td style="font-size:12px;">${o.birim||'—'}</td>
+            <td>${formatTarih(o.baslangicTarihi)}</td>
+            <td>${formatTarih(o.hedefTarih)}</td>
+            <td>${durumBadge(gercekDurum,o.hedefTarih)}</td>
+        </tr>`);
+    });
+    ayEtkinlikler.forEach(e => {
+        satirlar.push(`<tr>
+            <td>${satirlar.length+1}</td>
+            <td><span style="font-size:10px;background:#f3e8ff;color:#7c3aed;border-radius:3px;padding:1px 5px;">ETKİNLİK</span></td>
+            <td><strong>${e.baslik}</strong></td>
+            <td style="font-size:12px;">${e.not||'—'}</td>
+            <td>—</td>
+            <td>${formatTarih(e.baslangic)}</td>
+            <td>${formatTarih(e.bitis)}</td>
+            <td><span class="durum-badge devam">Planlandı</span></td>
+        </tr>`);
+    });
+    if (!satirlar.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Bu aya ait kayıt bulunmuyor.</td></tr>';
+    } else {
+        tbody.innerHTML = satirlar.join('');
+    }
+}
+
+function takvimGunTikla(ay, yil, d) {
+    const tarih = new Date(yil, ay, d); tarih.setHours(0,0,0,0);
+    const msgs = [];
+    oneriler.forEach(o => {
+        const bas  = o.baslangicTarihi ? new Date(o.baslangicTarihi) : null;
+        const bitis = o.hedefTarih ? new Date(o.hedefTarih) : null;
+        if (bas) bas.setHours(0,0,0,0);
+        if (bitis) bitis.setHours(0,0,0,0);
+        if ((bas && tarih.getTime()===bas.getTime()) || (bitis && tarih.getTime()===bitis.getTime())) {
+            msgs.push(`• ${o.no}: ${o.aciklama}\n  Birim: ${o.birim||'—'} | Durum: ${otomatikDurum(o)}\n  Başlangıç: ${formatTarih(o.baslangicTarihi)} → Hedef: ${formatTarih(o.hedefTarih)}`);
+        }
+    });
+    bagimsizEtkinlikler.forEach(e => {
+        const bas  = new Date(e.baslangic); bas.setHours(0,0,0,0);
+        const bitis = e.bitis ? new Date(e.bitis) : bas; bitis.setHours(0,0,0,0);
+        if (tarih>=bas && tarih<=bitis) {
+            msgs.push(`🟣 Etkinlik: ${e.baslik}\n  Not: ${e.not||'—'} | ${formatTarih(e.baslangic)}${e.bitis?' → '+formatTarih(e.bitis):''}`);
+        }
+    });
+    if (msgs.length) alert(msgs.join('\n\n'));
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BAĞIMSIZ ETKİNLİK
+══════════════════════════════════════════════════════════════ */
+function etkinlikEkleModalAc() {
+    document.getElementById('etk-idx').value   = '';
+    document.getElementById('etk-baslik').value = '';
+    document.getElementById('etk-baslangic').value = '';
+    document.getElementById('etk-bitis').value  = '';
+    document.getElementById('etk-not').value    = '';
+    new bootstrap.Modal(document.getElementById('etkinlikEkleModal')).show();
+}
+
+function etkinlikKaydet() {
+    const baslik    = document.getElementById('etk-baslik').value.trim();
+    const baslangic = document.getElementById('etk-baslangic').value;
+    if (!baslik || !baslangic) { alert('Başlık ve Başlangıç Tarihi zorunludur!'); return; }
+    const etkinlik = {
+        id:        Date.now(),
+        baslik:    baslik,
+        baslangic: baslangic,
+        bitis:     document.getElementById('etk-bitis').value || baslangic,
+        not:       document.getElementById('etk-not').value.trim()
+    };
+    bagimsizEtkinlikler.push(etkinlik);
+    localStorage.setItem('ofi_etkinlikler', JSON.stringify(bagimsizEtkinlikler));
+    bootstrap.Modal.getInstance(document.getElementById('etkinlikEkleModal')).hide();
+    takvimiYenile();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MATRİS 3×3
+   Etki: 3=Yüksek, 2=Orta, 1=Düşük
+   Kolaylık: 3=Kolay, 2=Orta, 1=Zor
+   Hücre ID: mhi-{etki}{kolaylik}
+══════════════════════════════════════════════════════════════ */
+function matrisYenile() {
+    // Tüm hücreleri temizle
+    for (let e=1; e<=3; e++) {
+        for (let k=1; k<=3; k++) {
+            const el = document.getElementById(`mhi-${e}${k}`);
+            if (el) el.innerHTML = '';
+        }
+    }
+
+    oneriler.filter(o => o.durum !== 'Tamamlandı' && o.durum !== 'İptal').forEach(o => {
+        const etki     = Math.min(Math.max(parseInt(o.etki)||2, 1), 3);
+        const kolaylik = Math.min(Math.max(parseInt(o.kolaylik)||2, 1), 3);
+        const hedefId  = `mhi-${etki}${kolaylik}`;
+        const hucre    = document.getElementById(hedefId);
+        if (!hucre) return;
+
+        const div = document.createElement('div');
+        div.className = 'matris-item';
+        div.title     = o.aciklama;
+        div.innerHTML = `<strong>${o.no}</strong> — ${o.aciklama.substring(0,35)}${o.aciklama.length>35?'...':''}<br>
+            <span style="color:var(--muted);">${o.birim||'—'}</span>
+            ${oncelikBadge(o.oncelik)}`;
+        div.onclick = () => detayGoster(oneriler.indexOf(o));
+        hucre.appendChild(div);
+    });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SEKME GEÇİŞLERİ
+══════════════════════════════════════════════════════════════ */
+function ofiSekme(panel, tab) {
+    document.querySelectorAll('.ofi-panel').forEach(p => p.classList.remove('aktif'));
+    document.querySelectorAll('.ofi-tab').forEach(t => t.classList.remove('aktif'));
+    document.getElementById('ofi-panel-' + panel).classList.add('aktif');
+    tab.classList.add('aktif');
+    if (panel === 'analiz') analizYenile();
+    if (panel === 'takvim') takvimiYenile();
+    if (panel === 'matris') matrisYenile();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function () {
+    const simdi = new Date();
+    document.getElementById('takvim-ay').value  = simdi.getMonth();
+    document.getElementById('takvim-yil').value = simdi.getFullYear();
+
+    birimFiltreDoldur();
+    tabloYenile(oneriler);
+    kpiGuncelle();
+});
+
+function tumunuYenile() {
+    birimFiltreDoldur();
+    tabloYenile(oneriler);
+    kpiGuncelle();
+    // Eğer aktif panel analiz/takvim/matris ise onları da güncelle
+    const aktifPanel = document.querySelector('.ofi-panel.aktif');
+    if (aktifPanel) {
+        const id = aktifPanel.id;
+        if (id.includes('analiz')) analizYenile();
+        if (id.includes('takvim')) takvimiYenile();
+        if (id.includes('matris')) matrisYenile();
+    }
+}
+</script>
+
+{% endblock %}

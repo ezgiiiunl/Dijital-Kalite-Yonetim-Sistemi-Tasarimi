@@ -1,0 +1,2423 @@
+{% extends "ana.html" %}
+{% block icerik %}
+
+<style>
+    /* doc-card tasarımı */
+.doc-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background: #fff;
+    transition: box-shadow 0.25s, transform 0.25s;
+    height: 100%;
+    overflow: hidden;
+}
+.doc-card:hover { box-shadow: 0 8px 32px rgba(37,99,235,.13); transform: translateY(-4px); }
+.doc-card-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin-bottom: 14px;
+}
+.doc-card-body { padding: 28px 24px 20px 24px; display: flex; flex-direction: column; gap: 6px; }
+.doc-card-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+.doc-card-desc  { font-size: 12.5px; color: #64748b; min-height: 36px; }
+.doc-card-footer { padding: 0 24px 22px 24px; }
+.btn-doc {
+    width: 100%; border-radius: 10px;
+    border: 1.5px solid #2563eb; color: #2563eb;
+    background: transparent; font-size: 13px; font-weight: 600;
+    padding: 9px 0;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    transition: background 0.18s, color 0.18s; cursor: pointer;
+}
+.btn-doc:hover { background: #2563eb; color: #fff; }
+.icon-blue   { background: #eff6ff; color: #2563eb; }
+.icon-amber  { background: #fffbeb; color: #d97706; }
+    :root {
+        --primary:       #2563eb;
+        --primary-light: #eff6ff;
+        --border:        #e2e8f0;
+        --surface:       #ffffff;
+        --bg:            #f8fafc;
+        --text:          #1e293b;
+        --muted:         #64748b;
+        --success:       #16a34a;
+        --warning:       #d97706;
+        --danger:        #dc2626;
+        --radius:        8px;
+    }
+
+    .card { border: none; border-radius: 12px; transition: transform 0.2s; background-color: #ffffff; }
+    .card:hover { transform: translateY(-4px); }
+    .btn-kurumsal { background-color: #007bff; color: white; border: none; }
+    .btn-kurumsal:hover { background-color: #0056b3; color: white; }
+    .btn-outline-kurumsal { border: 1px solid #007bff; color: #007bff; background: transparent; }
+    .btn-outline-kurumsal:hover { background: #007bff; color: #fff; }
+    .modal-content { border-radius: 15px; border: none; color: #333; overflow: hidden; }
+
+    .den-sidebar {
+        width: 220px;
+        flex-shrink: 0;
+        background: #1f2d3d;
+        min-height: 600px;
+        padding: 16px 0;
+    }
+    .den-sidebar-title {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        color: #94a3b8;
+        padding: 0 16px 10px;
+        text-transform: uppercase;
+    }
+    .den-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: #cbd5e1;
+        border-left: 3px solid transparent;
+        transition: .12s;
+    }
+    .den-nav-item:hover  { background: rgba(255,255,255,.06); color: #fff; }
+    .den-nav-item.active { background: rgba(37,99,235,.25); color: #93c5fd; border-left-color: #2563eb; }
+    .den-nav-item .bi   { font-size: 14px; }
+
+    .den-main { flex: 1; padding: 24px; background: var(--bg); overflow-y: auto; }
+
+    .card-kys {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 1px 4px rgba(0,0,0,.07);
+        margin-bottom: 18px;
+    }
+    .card-kys .ck-header {
+        padding: 12px 18px;
+        font-weight: 700;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #fafbfc;
+        border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .card-kys .ck-body { padding: 18px; }
+
+    .den-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .den-table thead th {
+        background: #1f2d3d;
+        color: #fff;
+        padding: 10px 14px;
+        font-weight: 600;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+    .den-table tbody td {
+        padding: 9px 14px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+    .den-table tbody tr:hover td { background: var(--primary-light); }
+
+    .badge-durum {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .badge-durum.planlandı  { background: #fef9c3; color: #92400e; }
+    .badge-durum.devam      { background: #dbeafe; color: #1d4ed8; }
+    .badge-durum.tamamlandı { background: #dcfce7; color: var(--success); }
+    .badge-durum.gecikti    { background: #fee2e2; color: var(--danger); }
+    .badge-durum.raporbekl  { background: #f3e8ff; color: #7c3aed; }
+    .badge-durum.döfaçıldı  { background: #fff7ed; color: #c2410c; }
+    .badge-durum.kapandı    { background: #dcfce7; color: var(--success); }
+
+    .iso-ref {
+        display: inline-block;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 6px;
+        white-space: nowrap;
+    }
+    .zorunlu-badge {
+        display: inline-block;
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fca5a5;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 6px;
+    }
+
+    .den-panel { display: none; }
+    .den-panel.aktif { display: block; }
+
+    .den-form-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .check-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 9px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+    }
+    .check-item:last-child { border-bottom: none; }
+    .check-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); margin-top:2px; flex-shrink:0; }
+    .check-item .iso-ref { flex-shrink: 0; }
+    .check-item.checked > span:not(.iso-ref) { text-decoration: line-through; color: var(--muted); }
+    .check-item textarea { font-size:12px; resize:vertical; min-height:32px; }
+
+    .onay-cerceve { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 10px; padding: 12px; margin-bottom: 15px; }
+    .onay-metni   { font-size: 0.95rem; color: #28a745; font-weight: 600; }
+
+     /* KPI Kartları */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.kpi-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.kpi-card .kpi-num { font-size: 28px; font-weight: 800; line-height: 1; }
+.kpi-card .kpi-lbl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+
+    /* Aksiyon butonları */
+    .btn-aksiyon { font-size: 11px; padding: 2px 8px; border-radius: 4px; border: none; cursor: pointer; white-space: nowrap; }
+    .btn-goruntule { background: #eff6ff; color: #1d4ed8; }
+    .btn-goruntule:hover { background: #dbeafe; }
+    .btn-pdf { background: #fef2f2; color: #b91c1c; }
+    .btn-pdf:hover { background: #fee2e2; }
+    .btn-dof { background: #fff7ed; color: #c2410c; }
+    .btn-dof:hover { background: #ffedd5; }
+    .btn-duzenle { background: #f0fdf4; color: #16a34a; }
+    .btn-duzenle:hover { background: #dcfce7; }
+    .btn-sil { background: #fef2f2; color: #b91c1c; }
+    .btn-sil:hover { background: #fee2e2; }
+
+    /* Uyarı banner */
+    .alert-bagimsizlik {
+        background: #fef2f2;
+        border: 1px solid #fca5a5;
+        border-radius: var(--radius);
+        padding: 10px 14px;
+        font-size: 12px;
+        color: #b91c1c;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    /* Sapma analizi */
+    .sapma-pozitif { color: var(--danger); font-weight: 700; }
+    .sapma-sifir   { color: var(--success); font-weight: 700; }
+
+    /* Inline edit */
+    .inline-edit-input { border: 1px solid #bfdbfe; border-radius: 4px; padding: 2px 6px; font-size: 12px; width: 100%; }
+
+    /* Grup başlığı kontrol listesi */
+    .checklist-grup-baslik {
+        background: #f1f5f9;
+        padding: 10px 14px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #1f2d3d;
+        border-bottom: 1px solid var(--border);
+    }
+    .checklist-surec-baslik {
+        background: #e8f0fe;
+        padding: 8px 14px 8px 24px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #1d4ed8;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* Kapsam müdürlük grup başlığı */
+    .kapsam-mudürlük-baslik {
+        background: #1f2d3d;
+        color: #fff;
+        padding: 9px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        border-bottom: 2px solid #2563eb;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    {% if session.get('rol') != 'editor' %}
+    .admin-ozel { display: none !important; }
+    {% endif %}
+</style>
+<div class="d-flex justify-content-between align-items-center mb-2">
+<h3 class="mb-1 fw-bold" style="color:#1e293b;">Denetim Yönetimi</h3>
+</div>
+
+
+<!-- Dashboard KPI Kartları -->
+<div class="kpi-grid mb-4">
+
+    <!-- Geciken Denetim -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#d97706;">
+            {% set ic_gecikti = audits | selectattr('status','equalto','Gecikti') | list | length if audits else 0 %}
+            {% set dis_gecikti = dis_denetim_program | selectattr('durum','equalto','Gecikti') | list | length if dis_denetim_program else 0 %}
+            {{ ic_gecikti + dis_gecikti }}
+        </div>
+        <div class="kpi-lbl">Geciken Denetim</div>
+    </div>
+
+    <!-- Planlanan Denetim -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#7c3aed;">
+            {% set ic_planli = audits | selectattr('status','equalto','Planlandı') | list | length if audits else 0 %}
+            {% set dis_planli = dis_denetim_program | selectattr('durum','equalto','Planlandı') | list | length if dis_denetim_program else 0 %}
+            {{ ic_planli + dis_planli }}
+        </div>
+        <div class="kpi-lbl">Planlanan Denetim</div>
+    </div>
+
+    <!-- Tamamlanan Denetim -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#2563eb;">
+            {% set ic_tamam = audits | selectattr('status','equalto','Uygulandı') | list | length if audits else 0 %}
+            {% set dis_tamam = dis_denetim_program | selectattr('durum','equalto','Uygulandı') | list | length if dis_denetim_program else 0 %}
+            {{ ic_tamam + dis_tamam }}
+        </div>
+        <div class="kpi-lbl">Tamamlanan Denetim</div>
+    </div>
+
+    <!-- Tamamlanma Oranı -->
+    <div class="kpi-card">
+        <div class="kpi-num" style="color:#16a34a;">
+            {% set ic_top = audits | length if audits else 0 %}
+            {% set dis_top = dis_denetim_program | length if dis_denetim_program else 0 %}
+            {% set toplam = ic_top + dis_top %}
+
+            {% set ic_tamam2 = audits | selectattr('status','equalto','Uygulandı') | list | length if audits else 0 %}
+            {% set dis_tamam2 = dis_denetim_program | selectattr('durum','equalto','Uygulandı') | list | length if dis_denetim_program else 0 %}
+            {% set tamamlanan = ic_tamam2 + dis_tamam2 %}
+
+            {{ ((tamamlanan / toplam) * 100) | int if toplam > 0 else 0 }}%
+        </div>
+        <div class="kpi-lbl">Tamamlanma Oranı</div>
+    </div>
+
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- Dış Denetim -->
+    <div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-amber">
+                    <i class="bi bi-clipboard2-check"></i>
+                </div>
+                <div class="doc-card-title">Dış Denetim</div>
+                <div class="doc-card-desc">Dış denetim kayıtları ve bulgularının takip listesi.</div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#disDenetimModal">
+                    <i class="bi bi-arrow-right-circle"></i> Modülü Aç
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- İç Denetim -->
+    <div class="col-md-3">
+        <div class="doc-card shadow-sm">
+            <div class="doc-card-body">
+                <div class="doc-card-icon icon-blue">
+                    <i class="bi bi-clipboard-check"></i>
+                </div>
+                <div class="doc-card-title">İç Denetim</div>
+                <div class="doc-card-desc">İç denetim programı, bulgular ve uygunsuzluk takibi.</div>
+            </div>
+            <div class="doc-card-footer">
+                <button class="btn-doc" data-bs-toggle="modal" data-bs-target="#icDenetimModal">
+                    <i class="bi bi-arrow-right-circle"></i> Modülü Aç
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- ══ İÇ DENETİM MODAL ══════════════════════════════════════════ -->
+<div class="modal fade" id="icDenetimModal" tabindex="-1">
+  <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white">
+            <i class="bi bi-clipboard-check me-2"></i>İç Denetim Yönetimi
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-0 h-100">
+        <div class="d-flex h-100">
+
+          <!-- SOL MENÜ -->
+          <div class="den-sidebar">
+            <div class="den-sidebar-title">İç Denetim</div>
+            <div class="den-nav-item active" onclick="denPanel('program', this)">
+                <i class="bi bi-calendar3"></i>Denetim Programı
+            </div>
+            <div class="den-nav-item" onclick="denPanel('denetci', this)">
+                <i class="bi bi-person-badge"></i>Denetçi Tanımlama
+            </div>
+            <div class="den-nav-item" onclick="denPanel('kriter', this)">
+                <i class="bi bi-list-check"></i>Kriter & Kapsam
+            </div>
+            <div class="den-nav-item" onclick="denPanel('sonuc', this)">
+                <i class="bi bi-exclamation-triangle"></i>Bulgular & Uygunsuzluklar
+            </div>
+            <div class="den-nav-item" onclick="denPanel('checklist', this)">
+                <i class="bi bi-check2-square"></i>Kontrol Listesi
+            </div>
+            <div class="den-nav-item" onclick="denPanel('tutanak', this)">
+                <i class="bi bi-file-earmark-text"></i>Toplantı Tutanakları
+            </div>
+          </div>
+
+          <!-- SAĞ PANEL -->
+          <div class="den-main">
+
+            {% if session.get('rol') == 'editor' %}
+            <div class="onay-cerceve">
+                <div id="onay-alani-denetim" class="d-flex align-items-center gap-2">
+                    <span class="fw-bold text-secondary flex-shrink-0" style="font-size:.85rem;">Gözden Geçirme Sorumlusu:</span>
+                    <input type="text" id="sorumlu-ad-denetim" class="form-control form-control-sm" placeholder="İsim yazınız...">
+                    <button class="btn btn-sm btn-success flex-shrink-0" onclick="onaylaSorumlu('denetim')">Onayla</button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- PANEL 1: Denetim Programı -->
+            <div id="panel-program" class="den-panel aktif">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-calendar3 text-primary me-1"></i>İç Denetim Programı</h6>
+                    <input class="form-control form-control-sm w-25" placeholder="Ara..." onkeyup="denFiltre('den-program-tbody', this.value)">
+                </div>
+
+                <div class="card-kys">
+                    <div class="ck-header"><i class="bi bi-table text-primary"></i>Planlı Denetimler</div>
+                    <div class="ck-body p-0">
+                        <div style="overflow-x:auto;">
+                            <table class="den-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Denetlenecek Birim</th>
+                                        <th>Tarih</th>
+                                        <th>Durum</th>
+                                        <th>Gecikme Nedeni</th>
+                                        <th class="admin-ozel">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="den-program-tbody">
+                                    {% for audit in audits %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ audit.department }}</td>
+                                        <td>{{ audit.date }}</td>
+                                        <td>
+                                            {% if session.get('rol') == 'editor' %}
+                                            <select class="form-select form-select-sm" style="font-size:11px;min-width:120px;"
+                                                onchange="durumGuncelle(this, {{ audit.id }}); gecikmeNedeniGoster(this)">
+                                                <option {% if audit.status=='Planlandı' %}selected{% endif %}>Planlandı</option>
+                                                <option {% if audit.status=='Uygulandı' %}selected{% endif %}>Uygulandı</option>
+                                                <option {% if audit.status=='Gecikti' %}selected{% endif %}>Gecikti</option>
+                                            </select>
+                                            {% else %}
+                                            <span class="badge-durum {% if audit.status=='Uygulandı' %}tamamlandı{% elif audit.status=='Gecikti' %}gecikti{% else %}planlandı{% endif %}">{{ audit.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if session.get('rol') == 'editor' %}
+                                            <input type="text" class="form-control form-control-sm gecikme-neden"
+                                                placeholder="Gecikme nedeni..."
+                                                style="font-size:11px;display:{% if audit.status=='Gecikti' %}block{% else %}none{% endif %};"
+                                                value="{{ audit.gecikme_neden if audit.gecikme_neden else '' }}"
+                                                onblur="gecikmeNedenKaydet(this, {{ audit.id }})">
+                                            {% else %}
+                                            {{ audit.gecikme_neden if audit.gecikme_neden else '—' }}
+                                            {% endif %}
+                                        </td>
+                                        <td class="admin-ozel">
+                                            <div class="d-flex gap-1 flex-wrap">
+                                                <button class="btn-aksiyon btn-duzenle" onclick="icProgramDuzenle(this, {{ audit.id }})">
+                                                    <i class="bi bi-pencil"></i> Düzenle
+                                                </button>
+                                                <form action="/delete_audit/{{ audit.id }}" method="POST" style="display:inline;">
+                                                    <button class="btn-aksiyon btn-sil" onclick="return confirm('Bu denetimi silmek istediğinize emin misiniz?')">
+                                                        <i class="bi bi-trash"></i> Sil
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="6" class="text-center text-muted py-4">Henüz denetim kaydı bulunmuyor.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="card-kys admin-ozel">
+                    <div class="ck-header"><i class="bi bi-plus-circle text-primary"></i>Yeni Denetim Ekle</div>
+                    <div class="ck-body">
+                        <form method="POST" action="/create_audit">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="den-form-label">Denetlenecek Birim</label>
+                                    <input name="department" class="form-control form-control-sm" placeholder="Müdürlük / Birim adı" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="den-form-label">Tarih</label>
+                                    <input type="date" name="date" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="den-form-label">Durum</label>
+                                    <select name="status" class="form-select form-select-sm">
+                                        <option>Planlandı</option>
+                                        <option>Uygulandı</option>
+                                        <option>Gecikti</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button class="btn btn-kurumsal btn-sm w-100">Kaydet</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- PANEL 2: Denetçi Tanımlama -->
+            <div id="panel-denetci" class="den-panel">
+                <h6 class="fw-bold mb-3"><i class="bi bi-person-badge text-primary me-1"></i>Denetçi Tanımlama</h6>
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="card-kys mb-3 admin-ozel">
+                    <div class="ck-header"><i class="bi bi-plus-circle text-primary"></i>Yeni Denetçi Ekle</div>
+                    <div class="ck-body">
+                        <form method="POST" action="/denetci_ekle">
+                            <div class="row g-2">
+                                <div class="col-md-2"><label class="den-form-label">Ad Soyad</label><input name="ad" class="form-control form-control-sm" placeholder="Ad Soyad" required></div>
+                                <div class="col-md-2"><label class="den-form-label">Ünvan</label><input name="birim" class="form-control form-control-sm" placeholder="Kalite Uzmanı"></div>
+                                <div class="col-md-2"><label class="den-form-label">Görev Yeri</label><input name="gorev_yeri" class="form-control form-control-sm" placeholder="Görev yeri"></div>
+                                <div class="col-md-2"><label class="den-form-label">Denetlediği Birim</label><input name="denetledigi_birim" class="form-control form-control-sm" placeholder="Denetlediği birim"></div>
+                                <div class="col-md-2"><label class="den-form-label">Eğitim / Sertifika</label><input name="sertifika" class="form-control form-control-sm" placeholder="ISO 9001 LA Eğitimi"></div>
+                                <div class="col-md-1"><label class="den-form-label">Sert. Tarihi</label><input type="date" name="tarih" class="form-control form-control-sm"></div>
+                                <div class="col-md-1 d-flex align-items-end"><button class="btn btn-kurumsal btn-sm w-100">Ekle</button></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card-kys">
+                    <div class="ck-header"><i class="bi bi-people text-primary"></i>Kayıtlı Denetçiler — <small class="text-muted fw-normal">ISO 9001 Md. 7.2</small></div>
+                    <div class="ck-body p-0">
+                        <table class="den-table">
+                            <thead>
+                                <tr><th>#</th><th>Ad Soyad</th><th>Ünvan</th><th>Görev Yeri</th><th>Denetlediği Birim</th><th>Sertifika / Eğitim</th><th>Tarih</th><th>Durum</th><th class="admin-ozel">İşlem</th></tr>
+                            </thead>
+                            <tbody id="denetci-tbody">
+                                {% for d in denetciler %}
+                                <tr data-id="{{ d.id }}">
+                                    <td>{{ loop.index }}</td>
+                                    <td class="denetci-ad">{{ d.ad }}</td>
+                                    <td class="denetci-birim">{{ d.birim }}</td>
+                                    <td class="denetci-gorevyeri">{{ d.gorev_yeri if d.gorev_yeri else '—' }}</td>
+                                    <td class="denetci-denetledigi">{{ d.denetledigi_birim if d.denetledigi_birim else '—' }}</td>
+                                    <td class="denetci-sertifika">{{ d.sertifika }}</td>
+                                    <td class="denetci-tarih">{{ d.tarih }}</td>
+                                    <td><span class="badge-durum tamamlandı">Yeterli</span></td>
+                                    <td class="admin-ozel">
+                                        <div class="d-flex gap-1">
+                                            <button class="btn-aksiyon btn-duzenle" onclick="denetciDuzenle(this, {{ d.id }})"><i class="bi bi-pencil"></i> Düzenle</button>
+                                            <form action="/denetci_sil/{{ d.id }}" method="POST" style="display:inline;">
+                                                <button class="btn-aksiyon btn-sil" onclick="return confirm('Bu denetçiyi silmek istediğinize emin misiniz?')"><i class="bi bi-trash"></i> Sil</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-3">
+                                        Denetçi kaydı bulunamadı. <span class="iso-ref">ISO 7.2</span> gereği yeterlilik kaydı tutulmalıdır.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 3: Kriter & Kapsam -->
+            <div id="panel-kriter" class="den-panel">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-list-check text-primary me-1"></i>
+                    Denetim Kriter & Kapsam Tanımları
+                </h6>
+
+                <!-- KAPSAM -->
+                <div class="card-kys">
+                    <div class="ck-header">
+                        <i class="bi bi-bullseye text-primary"></i>
+                        Denetim Kapsamı (Scope)
+                        {% if session.get('rol') == 'editor' %}
+                        <button class="btn btn-kurumsal btn-sm ms-auto admin-ozel" onclick="kapsamEkleFormuAc()">
+                            <i class="bi bi-plus-circle"></i> Ekle
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="ck-body p-0">
+                        <!-- Ekleme Formu -->
+                        <div id="kapsam-form-alani" style="display:none;padding:14px;background:#f8fafc;border-bottom:1px solid var(--border);">
+                            <div class="row g-2">
+                                <div class="col-md-3"><label class="den-form-label">Müdürlük</label><input id="kapsam-mudürlük" class="form-control form-control-sm" placeholder="Müdürlük adı"></div>
+                                <div class="col-md-3"><label class="den-form-label">Süreç</label><input id="kapsam-surec" class="form-control form-control-sm" placeholder="Süreç adı"></div>
+                                <div class="col-md-3"><label class="den-form-label">Dönem</label><input id="kapsam-donem" class="form-control form-control-sm" placeholder="2025"></div>
+                                <div class="col-md-3"><label class="den-form-label">Standart</label><input id="kapsam-standart" class="form-control form-control-sm" placeholder="ISO 9001"></div>
+                            </div>
+                            <div class="row g-2 mt-1">
+                                <div class="col-md-8"><label class="den-form-label">Açıklama</label><input id="kapsam-aciklama" class="form-control form-control-sm" placeholder="Açıklama"></div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Kapsama Dahil</label>
+                                    <select id="kapsam-dahil" class="form-select form-select-sm">
+                                        <option value="Dahil">Dahil</option>
+                                        <option value="Hariç">Hariç</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end gap-1">
+                                    <button class="btn btn-kurumsal btn-sm flex-fill" onclick="kapsamKaydet()">Kaydet</button>
+                                    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('kapsam-form-alani').style.display='none'">İptal</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Müdürlük bazlı kapsam - JS ile doldurulur -->
+                        <div id="kapsam-mudürlük-container"></div>
+                    </div>
+                </div>
+
+                <!-- KRİTER -->
+                <div class="card-kys mt-3">
+                    <div class="ck-header">
+                        <i class="bi bi-bookmarks text-primary"></i>
+                        Denetim Kriterleri (Criteria)
+                    </div>
+                    <div class="ck-body p-0">
+                        <div style="overflow-x:auto;">
+                            <table class="den-table">
+                                <thead>
+                                    <tr>
+                                        <th>Müdürlük</th>
+                                        <th>Süreç</th>
+                                        <th>ISO Maddesi</th>
+                                        <th>Doküman Türü</th>
+                                        <th>Doküman Adı / Kodu</th>
+                                        <th>Açıklama</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="kriter-tbody">
+                                    <!-- Kapsam verilerine göre JS ile otomatik doldurulur -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 4: Bulgular & Uygunsuzluklar (iç denetim) -->
+            <div id="panel-sonuc" class="den-panel">
+                <h6 class="fw-bold mb-3"><i class="bi bi-exclamation-triangle text-primary me-1"></i>Bulgular & Uygunsuzluklar</h6>
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="card-kys mb-3 admin-ozel">
+                    <div class="ck-header"><i class="bi bi-plus-circle text-primary"></i>Yeni Bulgu Ekle</div>
+                    <div class="ck-body">
+                        <form method="POST" action="/bulgu_ekle">
+                            <div class="row g-2">
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Bulgu Tipi</label>
+                                    <select name="tip" class="form-select form-select-sm" onchange="dofOnerisiGoster(this)">
+                                        <option>Majör Uygunsuzluk</option>
+                                        <option>Minör Uygunsuzluk</option>
+                                        <option>Gözlem</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2"><label class="den-form-label">ISO Maddesi</label><input name="iso" class="form-control form-control-sm" placeholder="9.2"></div>
+                                <div class="col-md-3"><label class="den-form-label">Açıklama</label><input name="aciklama" class="form-control form-control-sm" placeholder="Bulgu açıklaması" required></div>
+                                <div class="col-md-2"><label class="den-form-label">Sorumlu</label><input name="sorumlu" class="form-control form-control-sm" placeholder="Birim/Kişi"></div>
+                                <div class="col-md-2"><label class="den-form-label">Tarih</label><input type="date" name="kapanis" class="form-control form-control-sm"></div>
+                                <div class="col-md-1 d-flex align-items-end"><button class="btn btn-kurumsal btn-sm w-100">Ekle</button></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card-kys">
+                    <div class="ck-header"><i class="bi bi-bug text-primary"></i>Bulgu Listesi  <small class="text-muted fw-normal"></small></div>
+                    <div class="ck-body p-0">
+                        <table class="den-table">
+                            <thead>
+                                <tr><th>#</th><th>Bulgu Tipi</th><th>ISO Mad.</th><th>Açıklama</th><th>Sorumlu</th><th>Tarih</th><th>Durum</th><th class="admin-ozel">İşlem</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for b in bulgular %}
+                                <tr data-id="{{ b.id }}">
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        {% if b.tip == 'Majör Uygunsuzluk' %}<span class="badge-durum gecikti">Majör</span>
+                                        {% elif b.tip == 'Minör Uygunsuzluk' %}<span class="badge-durum planlandı">Minör</span>
+                                        {% else %}<span class="badge-durum devam">Gözlem</span>{% endif %}
+                                    </td>
+                                    <td><span class="iso-ref">{{ b.iso }}</span></td>
+                                    <td>{{ b.aciklama }}</td>
+                                    <td>{{ b.sorumlu }}</td>
+                                    <td>{{ b.kapanis }}</td>
+                                    <td><span class="badge-durum {{ b.durum|lower }}">{{ b.durum }}</span></td>
+                                    <td class="admin-ozel">
+                                        <div class="d-flex gap-1">
+                                            <button class="btn-aksiyon btn-duzenle" onclick="bulgDuzenle(this, {{ b.id }})"><i class="bi bi-pencil"></i> Düzenle</button>
+                                            <form action="/bulgu_sil/{{ b.id }}" method="POST" style="display:inline;">
+                                                <button class="btn-aksiyon btn-sil" onclick="return confirm('Bu bulguyu silmek istediğinize emin misiniz?')"><i class="bi bi-trash"></i> Sil</button>
+                                            </form>
+                                            {% if b.tip != 'Gözlem' %}
+                                            <button class="btn-aksiyon btn-dof" onclick="aktarUygunsuzluk('{{ b.tip }}','{{ b.iso }}','{{ b.aciklama }}','{{ b.sorumlu }}','{{ b.kapanis }}','İç Denetim')">
+                                                <i class="bi bi-exclamation-circle"></i> Uyg. Aktar
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="8" class="text-center text-muted py-3">Henüz bulgu kaydı bulunmuyor.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 5: Kontrol Listesi -->
+            <div id="panel-checklist" class="den-panel">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold mb-0">
+                        <i class="bi bi-check2-square text-primary me-1"></i>
+                        İç Denetim Kontrol Listesi
+                    </h6>
+                    <select class="form-select form-select-sm w-auto" id="checklist-mudürlük-filtre" onchange="checklistMudürlükFiltrele(this.value)">
+                        <option value="tum">Tüm Müdürlükler</option>
+                    </select>
+                </div>
+
+                <div class="card-kys">
+                    <div class="ck-header">
+                        <i class="bi bi-card-checklist text-primary"></i>
+                        Müdürlük / Süreç Bazlı Denetim Soruları
+                        <span class="ms-auto text-muted fw-normal" style="font-size:11px;" id="checklist-birim-label">Tüm Müdürlükler</span>
+                    </div>
+
+                    <div id="checklist-container" class="ck-body p-0">
+                        <div class="text-center text-muted py-4" style="font-size:13px;" id="checklist-bos-mesaj">
+                            Kontrol listesi oluşturmak için önce <strong>Kriter & Kapsam</strong> bölümünden kapsam tanımlayınız.
+                        </div>
+                    </div>
+
+                    <div class="p-3 border-top d-flex align-items-center gap-3">
+                        <div style="flex:1;">
+                            <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
+                                <div id="checklist-bar" style="height:100%;background:#16a34a;width:0%;transition:.3s;"></div>
+                            </div>
+                        </div>
+                        <span id="checklist-pct" style="font-size:12px;font-weight:700;color:#16a34a;">0 / 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 6: Toplantı Tutanakları -->
+            <div id="panel-tutanak" class="den-panel">
+                <h6 class="fw-bold mb-3"><i class="bi bi-file-earmark-text text-primary me-1"></i>Açılış / Kapanış Toplantı Tutanakları</h6>
+                <p class="text-muted" style="font-size:12px;"> Denetimin gerçekleştiğine dair kanıt oluşturmak amacıyla tutanak yüklenmelidir.</p>
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="card-kys mb-3 admin-ozel">
+                    <div class="ck-header"><i class="bi bi-upload text-primary"></i>Tutanak Yükle</div>
+                    <div class="ck-body">
+                        <form method="POST" action="/tutanak_yukle" enctype="multipart/form-data">
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="den-form-label">Denetim</label>
+                                    <select name="denetim_id" class="form-select form-select-sm">
+                                        {% for audit in audits %}
+                                        <option value="{{ audit.id }}">{{ audit.department }} – {{ audit.date }}</option>
+                                        {% else %}
+                                        <option>Denetim bulunamadı</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Toplantı Türü</label>
+                                    <input name="toplanti_turu" class="form-control form-control-sm" placeholder="Açılış / Kapanış vb.">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Denetim Adı</label>
+                                    <input name="denetim_adi" class="form-control form-control-sm" placeholder="Denetim adı / kodu">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Toplantı Tarihi</label>
+                                    <input type="date" name="toplanti_tarihi" class="form-control form-control-sm">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Tutanak Dosyası</label>
+                                    <input type="file" name="tutanak_dosya" class="form-control form-control-sm" accept=".pdf,.docx">
+                                </div>
+                                <div class="col-12 d-flex justify-content-end mt-1">
+                                    <button class="btn btn-kurumsal btn-sm">Tutanağı Kaydet</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card-kys">
+                    <div class="ck-header"><i class="bi bi-files text-primary"></i>Kayıtlı Tutanaklar</div>
+                    <div class="ck-body p-0">
+                        <table class="den-table">
+                            <thead>
+                                <tr><th>#</th><th>Denetim</th><th>Denetim Adı</th><th>Toplantı Türü</th><th>Tarih</th><th>Dosya</th><th class="admin-ozel">İşlem</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for t in tutanaklar if tutanaklar is defined %}
+                                <tr data-id="{{ t.id }}">
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ t.denetim }}</td>
+                                    <td>{{ t.denetim_adi if t.denetim_adi else '—' }}</td>
+                                    <td>{{ t.turu }}</td>
+                                    <td>{{ t.tarih }}</td>
+                                    <td><a href="{{ t.dosya_url }}" class="btn-aksiyon btn-goruntule"><i class="bi bi-file-earmark-arrow-down"></i> İndir</a></td>
+                                    <td class="admin-ozel">
+                                        <div class="d-flex gap-1">
+                                            <form action="/tutanak_sil/{{ t.id }}" method="POST" style="display:inline;">
+                                                <button class="btn-aksiyon btn-sil" onclick="return confirm('Bu tutanağı silmek istediğinize emin misiniz?')"><i class="bi bi-trash"></i> Sil</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="7" class="text-center text-muted py-3">Henüz tutanak yüklenmemiş.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+          </div><!-- /den-main -->
+        </div><!-- /d-flex -->
+      </div><!-- /modal-body -->
+    </div>
+  </div>
+</div>
+
+<!-- ══ DIŞ DENETİM MODAL ══════════════════════════════════════════ -->
+<div class="modal fade" id="disDenetimModal" tabindex="-1">
+  <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white">
+            <i class="bi bi-building-check me-2"></i>Dış Denetim Yönetimi
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-0 h-100">
+        <div class="d-flex h-100">
+
+          <div class="den-sidebar">
+            <div class="den-sidebar-title">Dış Denetim</div>
+            <div class="den-nav-item active" onclick="disDenPanel('program', this)">
+                <i class="bi bi-calendar-event"></i>Denetim Programı
+            </div>
+            <div class="den-nav-item" onclick="disDenPanel('kurulus', this)">
+                <i class="bi bi-person-badge-fill"></i>Denetçi & Kurul Tanımlama
+            </div>
+            <div class="den-nav-item" onclick="disDenPanel('bulgular', this)">
+                <i class="bi bi-exclamation-triangle"></i>Bulgular & Uygunsuzluklar
+            </div>
+            <div class="den-nav-item" onclick="disDenPanel('belgeler', this)">
+                <i class="bi bi-folder2-open"></i>Belge Havuzu
+            </div>
+            <div class="den-nav-item" onclick="disDenPanel('iyilestirme', this)">
+                <i class="bi bi-lightbulb"></i>İyileştirme Önerileri
+            </div>
+          </div>
+
+          <div class="den-main">
+
+            <!-- DIŞ DENETİM: Program -->
+            <div id="dis-panel-program" class="dis-den-panel aktif" style="display:block;">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-calendar-event text-primary me-1"></i>Dış Denetim Takvimi</h6>
+                </div>
+
+                <div class="card-kys">
+                    <div class="ck-header"><i class="bi bi-briefcase text-primary"></i>Planlı / Geçmiş Dış Denetimler</div>
+                    <div class="ck-body p-0">
+                        <table class="den-table">
+                            <thead>
+                                <tr>
+                                    <th>Denetleyen Kurum</th>
+                                    <th>Denetim Türü</th>
+                                    <th>Tarih</th>
+                                    <th>Standart / Madde</th>
+                                    <th>Süreçler</th>
+                                    <th>Durum</th>
+                                    <th class="admin-ozel">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dis-program-tbody">
+                                {% for dp in dis_denetim_program %}
+                                <tr>
+                                    <td><strong>{{ dp.kurum }}</strong></td>
+                                    <td>{{ dp.tur }}</td>
+                                    <td>{{ dp.tarih }}</td>
+                                    <td><span class="iso-ref">{{ dp.standart }}</span></td>
+                                    <td>{{ dp.maddeler or '—' }}</td>
+                                    <td>
+                                        {% if session.get('rol') == 'editor' %}
+                                        <select class="form-select form-select-sm" style="font-size:11px;min-width:120px;"
+                                            onchange="disProgramDurumGuncelle(this, {{ dp.id }})">
+                                            <option {% if dp.durum=='Planlandı' %}selected{% endif %}>Planlandı</option>
+                                            <option {% if dp.durum=='Uygulandı' %}selected{% endif %}>Uygulandı</option>
+                                            <option {% if dp.durum=='Gecikti' %}selected{% endif %}>Gecikti</option>
+                                        </select>
+                                        {% else %}
+                                        <span class="badge-durum {% if dp.durum=='Uygulandı' %}tamamlandı{% elif dp.durum=='Gecikti' %}gecikti{% else %}planlandı{% endif %}">{{ dp.durum }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="admin-ozel">
+                                        <div class="d-flex gap-1">
+                                            <button class="btn-aksiyon btn-duzenle" onclick="disProgramDuzenle(this)">
+                                                <i class="bi bi-pencil"></i> Düzenle
+                                            </button>
+                                            <form action="/dis_denetim_sil/{{ dp.id }}" method="POST" style="display:inline;">
+                                                <button type="submit" class="btn-aksiyon btn-sil" onclick="return confirm('Bu kaydı silmek istediğinize emin misiniz?')">
+                                                    <i class="bi bi-trash"></i> Sil
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        Henüz dış denetim kaydı bulunmuyor.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="card-kys admin-ozel">
+                    <div class="ck-header"><i class="bi bi-plus-circle text-primary"></i>Yeni Dış Denetim Ekle</div>
+                    <div class="ck-body">
+                        <form method="POST" action="/dis_denetim_ekle">
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="den-form-label">Denetleyen Kurum</label>
+                                    <input name="kurum" class="form-control form-control-sm" placeholder="Belgelendirme Kuruluşu" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Denetim Türü</label>
+                                    <select name="tur" class="form-select form-select-sm">
+                                        <option>İlk Belgelendirme</option>
+                                        <option>Gözetim Denetimi</option>
+                                        <option>Yeniden Belgelendirme</option>
+                                        <option>Özel Denetim</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Tarih</label>
+                                    <input type="date" name="tarih" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Standart</label>
+                                    <select name="standart" class="form-select form-select-sm">
+                                        <option>ISO 9001:2015</option>
+                                        <option>ISO 14001:2015</option>
+                                        <option>ISO 45001:2018</option>
+                                        <option>Diğer</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-1">
+                                    <label class="den-form-label">Kapsam Mad.</label>
+                                    <input name="maddeler" class="form-control form-control-sm" placeholder="4,5,6...">
+                                </div>
+                                <div class="col-md-1">
+                                    <label class="den-form-label">Durum</label>
+                                    <select name="durum" class="form-select form-select-sm">
+                                        <option>Planlandı</option>
+                                        <option>Uygulandı</option>
+                                        <option>Gecikti</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-1 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-kurumsal btn-sm w-100">Kaydet</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- DIŞ DENETİM: Denetçi & Kurul Tanımlama -->
+            <div id="dis-panel-kurulus" class="dis-den-panel" style="display:none;">
+                <h6 class="fw-bold mb-3"><i class="bi bi-person-badge-fill text-primary me-1"></i>Dış Denetçi Bilgileri</h6>
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="card-kys mb-3 admin-ozel">
+                    <div class="ck-header"><i class="bi bi-plus-circle text-primary"></i>Yeni Dış Denetçi Ekle</div>
+                    <div class="ck-body">
+                        <form method="POST" action="/dis_denetci_ekle">
+                            <div class="row g-2">
+                                <div class="col-md-3"><label class="den-form-label">Kurum</label><input name="kurum" class="form-control form-control-sm" placeholder="Belgelendirme kuruluşu" required></div>
+                                <div class="col-md-3"><label class="den-form-label">Denetçi Adı</label><input name="ad" class="form-control form-control-sm" placeholder="Ad Soyad" required></div>
+                                <div class="col-md-3"><label class="den-form-label">Uzmanlık Alanı</label><input name="uzmanlik" class="form-control form-control-sm" placeholder="Baş Denetçi / Kalite"></div>
+                                <div class="col-md-2"><label class="den-form-label">İletişim</label><input name="iletisim" class="form-control form-control-sm" placeholder="e-posta"></div>
+                                <div class="col-md-1 d-flex align-items-end"><button class="btn btn-kurumsal btn-sm w-100">Ekle</button></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card-kys">
+                    <div class="ck-header"><i class="bi bi-shield-lock text-primary"></i>Dış Denetim Heyeti</div>
+                    <div class="ck-body p-0">
+                        <table class="den-table">
+                            <thead>
+                                <tr>
+                                    <th>Kurum</th>
+                                    <th>Denetçi Adı</th>
+                                    <th>Uzmanlık Alanı</th>
+                                    <th>İletişim</th>
+                                    <th class="admin-ozel">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dd in dis_denetciler if dis_denetciler is defined %}
+                                <tr data-id="{{ dd.id }}">
+                                    <td>{{ dd.kurum }}</td>
+                                    <td><strong>{{ dd.ad }}</strong></td>
+                                    <td>{{ dd.uzmanlik }}</td>
+                                    <td>{{ dd.iletisim }}</td>
+                                    <td class="admin-ozel">
+                                        <div class="d-flex gap-1">
+                                            <button class="btn-aksiyon btn-duzenle" onclick="disDenetciDuzenle(this, {{ dd.id }})"><i class="bi bi-pencil"></i> Düzenle</button>
+                                            <form action="/dis_denetci_sil/{{ dd.id }}" method="POST" style="display:inline;">
+                                                <button class="btn-aksiyon btn-sil" onclick="return confirm('Bu denetçiyi silmek istediğinize emin misiniz?')"><i class="bi bi-trash"></i> Sil</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td>Belgelendirme Kuruluşu X</td>
+                                    <td><strong>Ahmet Yılmaz</strong></td>
+                                    <td>Baş Denetçi / Kalite</td>
+                                    <td>iletisim@kurum.com</td>
+                                    <td class="admin-ozel">
+                                        <div class="d-flex gap-1">
+                                            <button class="btn-aksiyon btn-duzenle"><i class="bi bi-pencil"></i> Düzenle</button>
+                                            <button class="btn-aksiyon btn-sil"><i class="bi bi-trash"></i> Sil</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DIŞ DENETİM: Bulgular & Uygunsuzluklar -->
+            <div id="dis-panel-bulgular" class="dis-den-panel" style="display:none;">
+                <h6 class="fw-bold mb-3"><i class="bi bi-exclamation-triangle text-primary me-1"></i>Bulgular & Uygunsuzluklar</h6>
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="card-kys mb-3 admin-ozel">
+                    <div class="ck-header"><i class="bi bi-plus-circle text-primary"></i>Yeni Dış Denetim Bulgusu Ekle</div>
+                    <div class="ck-body">
+                        <form method="POST" action="/dis_bulgu_ekle">
+                            <div class="row g-2">
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Bulgu Tipi</label>
+                                    <select name="tip" class="form-select form-select-sm" onchange="disBulguDofGoster(this)">
+                                        <option>Majör Uygunsuzluk</option>
+                                        <option>Minör Uygunsuzluk</option>
+                                        <option>Gözlem</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">ISO Maddesi</label>
+                                    <input name="iso" class="form-control form-control-sm" placeholder="8.4">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="den-form-label">Açıklama</label>
+                                    <input name="aciklama" class="form-control form-control-sm" placeholder="Bulgu açıklaması" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Sorumlu Birim</label>
+                                    <input name="sorumlu" class="form-control form-control-sm" placeholder="Birim / Kişi">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Tarih</label>
+                                    <input type="date" name="kapanis" class="form-control form-control-sm">
+                                </div>
+                                <div class="col-md-1 d-flex align-items-end">
+                                    <button class="btn btn-kurumsal btn-sm w-100">Ekle</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card-kys">
+                    <div class="ck-header"><i class="bi bi-bug text-primary"></i>Dış Denetim Bulgu Listesi — <small class="text-muted fw-normal"></small></div>
+                    <div class="ck-body p-0">
+                        <table class="den-table">
+                            <thead>
+                                <tr><th>#</th><th>Bulgu Tipi</th><th>ISO Mad.</th><th>Açıklama</th><th>Sorumlu</th><th>Tarih</th><th class="admin-ozel">İşlem</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for db in dis_bulgular if dis_bulgular is defined %}
+                                <tr data-id="{{ db.id }}">
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        {% if db.tip == 'Majör Uygunsuzluk' %}<span class="badge-durum gecikti">Majör</span>
+                                        {% elif db.tip == 'Minör Uygunsuzluk' %}<span class="badge-durum planlandı">Minör</span>
+                                        {% else %}<span class="badge-durum devam">Gözlem</span>{% endif %}
+                                    </td>
+                                    <td><span class="iso-ref">{{ db.iso }}</span></td>
+                                    <td>{{ db.aciklama }}</td>
+                                    <td>{{ db.sorumlu }}</td>
+                                    <td>{{ db.kapanis }}</td>
+                                    <td class="admin-ozel">
+                                        <div class="d-flex gap-1">
+                                            <button class="btn-aksiyon btn-duzenle" onclick="disBulgDuzenle(this, {{ db.id }})"><i class="bi bi-pencil"></i> Düzenle</button>
+                                            <form action="/dis_bulgu_sil/{{ db.id }}" method="POST" style="display:inline;">
+                                                <button class="btn-aksiyon btn-sil" onclick="return confirm('Bu bulguyu silmek istediğinize emin misiniz?')"><i class="bi bi-trash"></i> Sil</button>
+                                            </form>
+                                            {% if db.tip != 'Gözlem' %}
+                                            <button class="btn-aksiyon btn-dof" onclick="aktarUygunsuzluk('{{ db.tip }}','{{ db.iso }}','{{ db.aciklama }}','{{ db.sorumlu }}','{{ db.kapanis }}','Dış Denetim')">
+                                                <i class="bi bi-exclamation-circle"></i> Uyg. Aktar
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="7" class="text-center text-muted py-3">Henüz dış denetim bulgusu bulunmuyor.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DIŞ DENETİM: Belge Havuzu -->
+            <div id="dis-panel-belgeler" class="dis-den-panel" style="display:none;">
+                <h6 class="fw-bold mb-3"><i class="bi bi-folder2-open text-primary me-1"></i>Dış Denetim Belge Havuzu</h6>
+                <p class="text-muted" style="font-size:12px;">Denetçi kurumun resmi raporları, sertifikalar ve ilgili belgeleri bu alanda saklanır. <span class="iso-ref">ISO 9001 Md. 7.5</span></p>
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="card-kys mb-3 admin-ozel">
+                    <div class="ck-header"><i class="bi bi-cloud-upload text-primary"></i>Belge Yükle</div>
+                    <div class="ck-body">
+                        <form method="POST" action="/dis_belge_yukle" enctype="multipart/form-data">
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="den-form-label">Belge Türü</label>
+                                    <select name="belge_turu" class="form-select form-select-sm">
+                                        <option>Denetim Raporu (Resmi)</option>
+                                        <option>Sertifika</option>
+                                        <option>Uygunsuzluk Bildirimi</option>
+                                        <option>Kapanış Onay Yazısı</option>
+                                        <option>Diğer</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="den-form-label">Belge Adı / Açıklama</label>
+                                    <input name="belge_adi" class="form-control form-control-sm" placeholder="Belge açıklaması" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="den-form-label">Belge Tarihi</label>
+                                    <input type="date" name="belge_tarihi" class="form-control form-control-sm">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="den-form-label">Dosya (PDF / DOCX)</label>
+                                    <input type="file" name="belge_dosya" class="form-control form-control-sm" accept=".pdf,.docx,.jpg,.png">
+                                </div>
+                                <div class="col-md-1 d-flex align-items-end">
+                                    <button class="btn btn-kurumsal btn-sm w-100">Yükle</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card-kys">
+                    <div class="ck-header"><i class="bi bi-archive text-primary"></i>Yüklü Belgeler</div>
+                    <div class="ck-body p-0">
+                        <table class="den-table">
+                            <thead>
+                                <tr><th>#</th><th>Belge Türü</th><th>Belge Adı</th><th>Tarih</th><th>Yükleyen</th><th>İndir</th><th class="admin-ozel">İşlem</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for belge in dis_belgeler if dis_belgeler is defined %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td><span class="iso-ref">{{ belge.tur }}</span></td>
+                                    <td>{{ belge.ad }}</td>
+                                    <td>{{ belge.tarih }}</td>
+                                    <td>{{ belge.yukleyen }}</td>
+                                    <td><a href="{{ belge.url }}" class="btn-aksiyon btn-goruntule"><i class="bi bi-download"></i> İndir</a></td>
+                                    <td class="admin-ozel">
+                                        <form action="/dis_belge_sil/{{ belge.id }}" method="POST" style="display:inline;">
+                                            <button class="btn-aksiyon btn-sil" onclick="return confirm('Bu belgeyi silmek istediğinize emin misiniz?')"><i class="bi bi-trash"></i> Sil</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td>1</td>
+                                    <td><span class="iso-ref">Sertifika</span></td>
+                                    <td>ISO 9001:2015 Sertifikası</td>
+                                    <td>10.01.2025</td>
+                                    <td>Kalite Müd.</td>
+                                    <td><button class="btn-aksiyon btn-goruntule"><i class="bi bi-download"></i> İndir</button></td>
+                                    <td class="admin-ozel"><button class="btn-aksiyon btn-sil" onclick="return confirm('Bu belgeyi silmek istediğinize emin misiniz?') && this.closest('tr').remove()"><i class="bi bi-trash"></i> Sil</button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DIŞ DENETİM: İyileştirme Önerileri -->
+            <div id="dis-panel-iyilestirme" class="dis-den-panel" style="display:none;">
+                <h6 class="fw-bold mb-3"><i class="bi bi-lightbulb text-primary me-1"></i>Dış Denetim İyileştirme Önerileri (OFI)</h6>
+
+                {% if session.get('rol') == 'editor' %}
+                <div class="card-kys mb-3 admin-ozel">
+                    <div class="ck-header"><i class="bi bi-plus-circle text-primary"></i>Yeni İyileştirme Önerisi Ekle</div>
+                    <div class="ck-body">
+                        <form method="POST" action="/dis_iyilestirme_ekle">
+                            <div class="row g-2">
+                                <div class="col-md-2"><label class="den-form-label">Öneri No</label><input name="oneri_no" class="form-control form-control-sm" placeholder="OFI-02" required></div>
+                                <div class="col-md-2"><label class="den-form-label">İlgili Madde</label><input name="madde" class="form-control form-control-sm" placeholder="7.1.6"></div>
+                                <div class="col-md-4"><label class="den-form-label">Öneri / Gözlem Açıklaması</label><input name="aciklama" class="form-control form-control-sm" placeholder="Öneri açıklaması" required></div>
+                                <div class="col-md-2"><label class="den-form-label">İlgili Birim</label><input name="birim" class="form-control form-control-sm" placeholder="Birim adı"></div>
+                                <div class="col-md-2 d-flex align-items-end"><button class="btn btn-kurumsal btn-sm w-100">Ekle</button></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card-kys">
+                    <div class="ck-header"><i class="bi bi-arrow-up-right-circle text-primary"></i>Gözlem ve Öneriler</div>
+                    <div class="ck-body p-0">
+                        <table class="den-table">
+                            <thead>
+                                <tr>
+                                    <th>Öneri No</th>
+                                    <th>İlgili Madde</th>
+                                    <th>Öneri / Gözlem Açıklaması</th>
+                                    <th>İlgili Birim</th>
+                                    <th>Aksiyon</th>
+                                    <th class="admin-ozel">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ofi in dis_iyilestirmeler if dis_iyilestirmeler is defined %}
+                                <tr data-id="{{ ofi.id }}">
+                                    <td>{{ ofi.oneri_no }}</td>
+                                    <td><span class="iso-ref">{{ ofi.madde }}</span></td>
+                                    <td>{{ ofi.aciklama }}</td>
+                                    <td>{{ ofi.birim }}</td>
+                                    <td>
+                                        {% if session.get('rol') == 'editor' %}
+                                        <input type="text" class="form-control form-control-sm" value="{{ ofi.aksiyon if ofi.aksiyon else 'Değerlendirmede' }}" style="font-size:11px;min-width:130px;">
+                                        {% else %}
+                                        {{ ofi.aksiyon if ofi.aksiyon else 'Değerlendirmede' }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="admin-ozel">
+                                        <div class="d-flex gap-1">
+                                            <button class="btn-aksiyon btn-duzenle" onclick="ofiDuzenle(this, {{ ofi.id }})"><i class="bi bi-pencil"></i></button>
+                                            <form action="/dis_iyilestirme_sil/{{ ofi.id }}" method="POST" style="display:inline;">
+                                                <button class="btn-aksiyon btn-sil" onclick="return confirm('Bu öneriyi silmek istediğinize emin misiniz?')"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                            <button class="btn-aksiyon btn-goruntule" onclick="aktarIyilestirme('{{ ofi.oneri_no }}','{{ ofi.madde }}','{{ ofi.aciklama }}','{{ ofi.birim }}')">
+                                                <i class="bi bi-box-arrow-up-right"></i> İyileştirmeye Aktar
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td>OFI-01</td>
+                                    <td><span class="iso-ref">7.1.6</span></td>
+                                    <td>Kurumsal bilgi birikiminin dijital platformda daha sistematik tutulması önerilir.</td>
+                                    <td>Bilgi İşlem</td>
+                                    <td>
+                                        {% if session.get('rol') == 'editor' %}
+                                        <input type="text" class="form-control form-control-sm" value="Değerlendirmede" style="font-size:11px;min-width:130px;">
+                                        {% else %}
+                                        Değerlendirmede
+                                        {% endif %}
+                                    </td>
+                                    <td class="admin-ozel">
+                                        <div class="d-flex gap-1">
+                                            <button class="btn-aksiyon btn-duzenle"><i class="bi bi-pencil"></i></button>
+                                            <button class="btn-aksiyon btn-sil" onclick="return confirm('Bu öneriyi silmek istediğinize emin misiniz?') && this.closest('tr').remove()"><i class="bi bi-trash"></i></button>
+                                            <button class="btn-aksiyon btn-goruntule" onclick="aktarIyilestirme('OFI-01','7.1.6','Kurumsal bilgi birikiminin dijital platformda daha sistematik tutulması önerilir.','Bilgi İşlem')">
+                                                <i class="bi bi-box-arrow-up-right"></i> İyileştirmeye Aktar
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Denetçi Düzenleme Modal -->
+<div class="modal fade" id="denetciDuzModal" tabindex="-1" style="z-index:9999;">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white"><i class="bi bi-pencil me-2"></i>Denetçi Düzenle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="/denetci_duzenle" id="denetciDuzForm">
+            <input type="hidden" name="id" id="duz-denetci-id">
+            <div class="row g-2">
+                <div class="col-md-4"><label class="den-form-label">Ad Soyad</label><input name="ad" id="duz-ad" class="form-control form-control-sm" required></div>
+                <div class="col-md-4"><label class="den-form-label">Ünvan</label><input name="birim" id="duz-birim" class="form-control form-control-sm"></div>
+                <div class="col-md-4"><label class="den-form-label">Görev Yeri</label><input name="gorev_yeri" id="duz-gorevyeri" class="form-control form-control-sm"></div>
+                <div class="col-md-4"><label class="den-form-label">Denetlediği Birim</label><input name="denetledigi_birim" id="duz-denetledigi" class="form-control form-control-sm"></div>
+                <div class="col-md-4"><label class="den-form-label">Sertifika / Eğitim</label><input name="sertifika" id="duz-sertifika" class="form-control form-control-sm"></div>
+                <div class="col-md-4"><label class="den-form-label">Sertifika Tarihi</label><input type="date" name="tarih" id="duz-tarih" class="form-control form-control-sm"></div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Vazgeç</button>
+                <button type="submit" class="btn btn-kurumsal btn-sm">Kaydet</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dış Denetçi Düzenleme Modal -->
+<div class="modal fade" id="disDenetciDuzModal" tabindex="-1" style="z-index:9999;">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white"><i class="bi bi-pencil me-2"></i>Dış Denetçi Düzenle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="/dis_denetci_duzenle" id="disDenetciDuzForm">
+            <input type="hidden" name="id" id="dis-duz-id">
+            <div class="row g-2">
+                <div class="col-md-3"><label class="den-form-label">Kurum</label><input name="kurum" id="dis-duz-kurum" class="form-control form-control-sm" required></div>
+                <div class="col-md-3"><label class="den-form-label">Denetçi Adı</label><input name="ad" id="dis-duz-ad" class="form-control form-control-sm" required></div>
+                <div class="col-md-3"><label class="den-form-label">Uzmanlık</label><input name="uzmanlik" id="dis-duz-uzmanlik" class="form-control form-control-sm"></div>
+                <div class="col-md-3"><label class="den-form-label">İletişim</label><input name="iletisim" id="dis-duz-iletisim" class="form-control form-control-sm"></div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Vazgeç</button>
+                <button type="submit" class="btn btn-kurumsal btn-sm">Kaydet</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Kapsam Düzenleme Modal -->
+<div class="modal fade" id="kapsamDuzModal" tabindex="-1" style="z-index:9999;">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white"><i class="bi bi-pencil me-2"></i>Kapsam Düzenle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+            <div class="col-md-4"><label class="den-form-label">Müdürlük</label><input id="kduz-mudürlük" class="form-control form-control-sm"></div>
+            <div class="col-md-4"><label class="den-form-label">Süreç</label><input id="kduz-surec" class="form-control form-control-sm"></div>
+            <div class="col-md-4"><label class="den-form-label">Dönem</label><input id="kduz-donem" class="form-control form-control-sm"></div>
+            <div class="col-md-4"><label class="den-form-label">Standart</label><input id="kduz-standart" class="form-control form-control-sm"></div>
+            <div class="col-md-4">
+                <label class="den-form-label">Kapsama Dahil</label>
+                <select id="kduz-dahil" class="form-select form-select-sm">
+                    <option value="Dahil">Dahil</option>
+                    <option value="Hariç">Hariç</option>
+                </select>
+            </div>
+            <div class="col-12"><label class="den-form-label">Açıklama</label><input id="kduz-aciklama" class="form-control form-control-sm"></div>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Vazgeç</button>
+            <button class="btn btn-kurumsal btn-sm" onclick="kapsamDuzKaydet()">Kaydet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OFI Düzenleme Modal -->
+<div class="modal fade" id="ofiDuzModal" tabindex="-1" style="z-index:9999;">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white"><i class="bi bi-pencil me-2"></i>İyileştirme Önerisi Düzenle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="/dis_iyilestirme_duzenle" id="ofiDuzForm">
+            <input type="hidden" name="id" id="ofi-duz-id">
+            <div class="row g-2">
+                <div class="col-md-3"><label class="den-form-label">Öneri No</label><input name="oneri_no" id="ofi-duz-no" class="form-control form-control-sm" required></div>
+                <div class="col-md-3"><label class="den-form-label">İlgili Madde</label><input name="madde" id="ofi-duz-madde" class="form-control form-control-sm"></div>
+                <div class="col-md-3"><label class="den-form-label">İlgili Birim</label><input name="birim" id="ofi-duz-birim" class="form-control form-control-sm"></div>
+                <div class="col-md-3"><label class="den-form-label">Aksiyon Durumu</label><input name="aksiyon" id="ofi-duz-aksiyon" class="form-control form-control-sm" placeholder="Değerlendirmede"></div>
+                <div class="col-12"><label class="den-form-label">Açıklama</label><textarea name="aciklama" id="ofi-duz-aciklama" class="form-control form-control-sm" rows="2"></textarea></div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Vazgeç</button>
+                <button type="submit" class="btn btn-kurumsal btn-sm">Kaydet</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulgu Düzenleme Modal -->
+<div class="modal fade" id="bulgDuzModal" tabindex="-1" style="z-index:9999;">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white"><i class="bi bi-pencil me-2"></i>Bulgu Düzenle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" id="bulgDuzForm">
+            <input type="hidden" name="id" id="bulgduz-id">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="den-form-label">Bulgu Tipi</label>
+                    <select name="tip" id="bulgduz-tip" class="form-select form-select-sm">
+                        <option>Majör Uygunsuzluk</option>
+                        <option>Minör Uygunsuzluk</option>
+                        <option>Gözlem</option>
+                    </select>
+                </div>
+                <div class="col-md-3"><label class="den-form-label">ISO Maddesi</label><input name="iso" id="bulgduz-iso" class="form-control form-control-sm"></div>
+                <div class="col-md-3"><label class="den-form-label">Sorumlu</label><input name="sorumlu" id="bulgduz-sorumlu" class="form-control form-control-sm"></div>
+                <div class="col-md-3"><label class="den-form-label">Tarih</label><input type="date" name="kapanis" id="bulgduz-tarih" class="form-control form-control-sm"></div>
+                <div class="col-12"><label class="den-form-label">Açıklama</label><textarea name="aciklama" id="bulgduz-aciklama" class="form-control form-control-sm" rows="2" required></textarea></div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Vazgeç</button>
+                <button type="submit" class="btn btn-kurumsal btn-sm">Kaydet</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dış Program Düzenleme Modal -->
+<div class="modal fade" id="disProgramDuzModal" tabindex="-1" style="z-index:9999;">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white"><i class="bi bi-pencil me-2"></i>Dış Denetim Kaydı Düzenle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+            <div class="col-md-4"><label class="den-form-label">Denetleyen Kurum</label><input id="disprog-kurum" class="form-control form-control-sm"></div>
+            <div class="col-md-4"><label class="den-form-label">Denetim Türü</label><input id="disprog-tur" class="form-control form-control-sm"></div>
+            <div class="col-md-4"><label class="den-form-label">Tarih</label><input type="date" id="disprog-tarih" class="form-control form-control-sm"></div>
+            <div class="col-md-4"><label class="den-form-label">Standart / Madde</label><input id="disprog-standart" class="form-control form-control-sm"></div>
+            <div class="col-md-4"><label class="den-form-label">Süreçler</label><input id="disprog-surec" class="form-control form-control-sm"></div>
+            <div class="col-md-4">
+                <label class="den-form-label">Durum</label>
+                <select id="disprog-durum" class="form-select form-select-sm">
+                    <option>Planlandı</option>
+                    <option>Uygulandı</option>
+                    <option>Gecikti</option>
+                </select>
+            </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Vazgeç</button>
+            <button class="btn btn-kurumsal btn-sm" onclick="disProgramKaydet()">Kaydet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Kontrol Listesi Soru Ekle/Düzenle Modal -->
+<div class="modal fade" id="soruDuzModal" tabindex="-1" style="z-index:9999;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1f2d3d;">
+        <h5 class="modal-title text-white" id="soruModalBaslik"><i class="bi bi-pencil me-2"></i>Soru</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+            <div class="col-12"><label class="den-form-label">Soru Metni</label><textarea id="soruduz-metin" class="form-control form-control-sm" rows="3" placeholder="Denetim sorusunu yazınız..."></textarea></div>
+
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Vazgeç</button>
+            <button class="btn btn-kurumsal btn-sm" onclick="soruKaydet()">Kaydet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ UYGUNSUZLUĞA AKTAR MODAL ═══════════════════════════════════ -->
+<div class="modal fade" id="aktarModal" tabindex="-1" style="z-index:10000;">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px; overflow:hidden;">
+      <div class="modal-header" style="background:#1a2b45; border-bottom:none;">
+        <h5 class="modal-title text-white fw-semibold">
+          <i class="bi bi-exclamation-triangle me-2" style="color:#f0a500;"></i>
+          Uygunsuzluğa Aktar
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:24px;">
+        <!-- Hata mesajı -->
+        <div id="aktar-hata"
+             style="display:none; background:#f8d7da; color:#842029;
+                    padding:10px 14px; border-radius:6px; margin-bottom:14px; font-size:13px;">
+        </div>
+
+        <!-- Otomatik gelen alanlar — salt okunur bilgi kutusu -->
+        <div class="d-flex gap-3 mb-3 p-3"
+             style="background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
+          <div>
+            <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Kaynak Türü</span>
+            <div>
+              <span id="aktar-kaynak-goster"
+                    style="display:inline-block; background:#eff6ff; color:#1d4ed8;
+                           border:1px solid #bfdbfe; border-radius:4px;
+                           font-size:12px; font-weight:700; padding:2px 10px; margin-top:4px;">—</span>
+            </div>
+          </div>
+          <div>
+            <span style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Uygunsuzluk Tipi</span>
+            <div>
+              <span id="aktar-tip-goster"
+                    style="display:inline-block; background:#fef2f2; color:#b91c1c;
+                           border:1px solid #fca5a5; border-radius:4px;
+                           font-size:12px; font-weight:700; padding:2px 10px; margin-top:4px;">—</span>
+            </div>
+          </div>
+          <div style="font-size:11px; color:#94a3b8; align-self:center; margin-left:auto;">
+            <i class="bi bi-info-circle me-1"></i>Otomatik atanır
+          </div>
+        </div>
+
+        <!-- Gizli alanlar -->
+        <input type="hidden" id="aktar-kaynak">
+        <input type="hidden" id="aktar-tip">
+        <input type="hidden" id="aktar-iso">
+
+        <!-- Form alanları — uygunsuzluk tablosundaki tüm başlıklara karşılık gelir -->
+        <div class="row g-3">
+          <!-- Uygunsuzluk Tanımı (tanim) — otomatik gelir, düzenlenebilir -->
+          <div class="col-12">
+            <label class="den-form-label">Uygunsuzluk Tanımı * <small class="text-muted fw-normal" style="text-transform:none;">(ISO 10.2.2.a)</small></label>
+            <textarea id="aktar-tanim" class="form-control form-control-sm" rows="3"
+                      placeholder="Uygunsuzluğu ayrıntılı tanımlayın..."></textarea>
+          </div>
+
+          <!-- İlgili Süreç (ilgili_surec) -->
+          <div class="col-md-6">
+            <label class="den-form-label">İlgili Süreç <small class="text-muted fw-normal" style="text-transform:none;">(ISO 4.4)</small></label>
+            <input type="text" id="aktar-surec" class="form-control form-control-sm"
+                   placeholder="örn: İç Denetim, Satın Alma...">
+          </div>
+
+          <!-- Müdürlük / Birim (mudurluk) — ZORUNLU -->
+          <div class="col-md-6">
+            <label class="den-form-label">Müdürlük / Birim *</label>
+            <input type="text" id="aktar-mudurluk" class="form-control form-control-sm"
+                   placeholder="örn: Kalite Müdürlüğü">
+          </div>
+
+          <!-- Tespit Tarihi (tespit_tarihi) — otomatik gelir, ZORUNLU -->
+          <div class="col-md-6">
+            <label class="den-form-label">Tespit Tarihi *</label>
+            <input type="date" id="aktar-tarih" class="form-control form-control-sm">
+          </div>
+
+          <!-- Tespit Yeri (tespit_yeri) -->
+          <div class="col-md-6">
+            <label class="den-form-label">Tespit Yeri</label>
+            <input type="text" id="aktar-yer" class="form-control form-control-sm"
+                   placeholder="örn: Giriş Kontrol, Saha Denetimi...">
+          </div>
+
+          <!-- Sorumlu (sorumlu) — otomatik gelir, ZORUNLU -->
+          <div class="col-md-6">
+            <label class="den-form-label">Sorumlu *</label>
+            <input type="text" id="aktar-sorumlu" class="form-control form-control-sm"
+                   placeholder="Ad Soyad veya Birim">
+          </div>
+
+          <!-- Olasılık (olasilik) -->
+          <div class="col-md-3">
+            <label class="den-form-label">Olasılık <small class="text-muted fw-normal" style="text-transform:none;">(1-5)</small></label>
+            <select id="aktar-olasilik" class="form-select form-select-sm" onchange="aktarRiskHesapla()">
+              <option value="">Seçiniz...</option>
+              <option value="1">1 - Çok Düşük</option>
+              <option value="2">2 - Düşük</option>
+              <option value="3">3 - Orta</option>
+              <option value="4">4 - Yüksek</option>
+              <option value="5">5 - Çok Yüksek</option>
+            </select>
+          </div>
+
+          <!-- Etki (etki) -->
+          <div class="col-md-3">
+            <label class="den-form-label">Etki <small class="text-muted fw-normal" style="text-transform:none;">(1-5)</small></label>
+            <select id="aktar-etki" class="form-select form-select-sm" onchange="aktarRiskHesapla()">
+              <option value="">Seçiniz...</option>
+              <option value="1">1 - Çok Düşük</option>
+              <option value="2">2 - Düşük</option>
+              <option value="3">3 - Orta</option>
+              <option value="4">4 - Yüksek</option>
+              <option value="5">5 - Kritik</option>
+            </select>
+          </div>
+
+          <!-- Risk Skoru (risk_skoru) — otomatik hesaplanan -->
+          <div class="col-md-6">
+            <label class="den-form-label">Risk Skoru <small class="text-muted fw-normal" style="text-transform:none;">(Olasılık × Etki, otomatik)</small></label>
+            <div id="aktar-risk-goster"
+                 style="background:#f8f9fa; border:1px solid #dee2e6;
+                        border-radius:6px; padding:5px 10px; font-size:14px;
+                        font-weight:700; min-height:31px; color:#333;">
+              —
+            </div>
+            <input type="hidden" id="aktar-risk-skoru">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #e2e8f0;">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">İptal</button>
+        <button type="button" id="aktar-kaydet-btn"
+                class="btn btn-sm"
+                style="background:#1a2b45; color:#fff;"
+                onclick="aktarModalKaydet()">
+          <i class="bi bi-save me-1"></i>Uygunsuzluğa Kaydet
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Başarı Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:11000;">
+  <div id="aktar-basari-toast" class="toast align-items-center text-white"
+       style="background:#16a34a;" role="alert" aria-live="assertive">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="bi bi-check-circle me-2"></i>
+        Uygunsuzluk kaydı oluşturuldu. (ID: <strong id="aktar-basari-id"></strong>)
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   KAPSAM VERİ DEPOSU
+══════════════════════════════════════════════════════ */
+let kapsamVerisi = [
+    { id:2, mudürlük:'Mali İşler Müdürlüğü', surec:'Bütçe Planlama', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Yıllık bütçe hazırlık ve takip süreçleri' },
+    { id:3, mudürlük:'Mali İşler Müdürlüğü', surec:'Muhasebe ve Tahakkuk', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Gelir-gider muhasebe süreçleri' },
+    { id:4, mudürlük:'Bilgi İşlem Müdürlüğü', surec:'Sistem ve Ağ Yönetimi', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'BT altyapı ve güvenlik yönetimi' },
+    { id:5, mudürlük:'İnsan Kaynakları Müdürlüğü', surec:'İşe Alım', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Personel temin ve seçme yerleştirme' },
+    { id:6, mudürlük:'İnsan Kaynakları Müdürlüğü', surec:'Eğitim ve Gelişim', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Çalışan yetkinlik ve eğitim yönetimi' },
+    { id:7, mudürlük:'Kalite Müdürlüğü', surec:'İç Denetim', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'KYS iç denetim süreçleri' },
+    { id:8, mudürlük:'Kalite Müdürlüğü', surec:'Döküman Yönetimi', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Prosedür ve talimat yönetimi' },
+    { id:10, mudürlük:'Üye Hizmetleri Müdürlüğü', surec:'Üye Kayıt', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Üye kayıt ve güncelleme işlemleri' },
+    { id:11, mudürlük:'Üye Hizmetleri Müdürlüğü', surec:'Üye Şikayet Yönetimi', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Üye memnuniyeti ve şikayet takip süreçleri' },
+     { id:12, mudürlük:'Araştırma ve Piyasa Geliştirme Müdürlüğü', surec:'Piyasa Analizi ve Raporlama', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Piyasa verilerinin analiz edilmesi ve raporlanması' },
+
+    { id:13, mudürlük:'Tescil ve Kontrol Müdürlüğü', surec:'Tescil İşlemleri ve Doğrulama', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Ürün ve işlem tescil süreçlerinin kontrolü ve doğrulanması' },
+
+    { id:14, mudürlük:'İş Geliştirme Müdürlüğü', surec:'Proje Geliştirme', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Yeni proje ve iş geliştirme faaliyetleri' },
+
+    { id:15, mudürlük:'Basın ve Medya İletişim Müdürlüğü', surec:'Kurumsal İletişim Yönetimi', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Basın bültenleri, medya ilişkileri ve kamuoyu bilgilendirme süreçleri' },
+
+    { id:16, mudürlük:'Kurumsal İletişim Müdürlüğü', surec:'Marka ve Kurumsal İmaj Yönetimi', donem:'2025', standart:'ISO 9001', dahil:'Dahil', aciklama:'Kurumsal kimlik, marka yönetimi ve iletişim stratejileri' }
+
+];
+let kapsamIdSay = 17;
+let kapsamDuzIdx = null;
+
+/* Soru veri deposu */
+let soruVerisi = {};
+let soruDuzKey = null;
+let soruDuzIdx = null;
+let soruIdSay  = 1000;
+
+/* Şablonlar */
+const SORU_SABLONLARI = {
+    'Bütçe Planlama':        ['Yıllık bütçe zamanında hazırlanıyor mu?','Bütçe gerçekleşme takibi yapılıyor mu?','Sapma analizleri raporlanıyor mu?'],
+    'Muhasebe ve Tahakkuk':  ['Gelir-gider kayıtları güncel mi?','Tahakkuk işlemleri zamanında yapılıyor mu?','Mali tablolar doğrulanıyor mu?'],
+    'Sistem ve Ağ Yönetimi': ['BT altyapısı düzenli bakımdan geçiyor mu?','Siber güvenlik önlemleri uygulanıyor mu?','Erişim yetkileri güncel mi?'],
+    'İşe Alım':              ['İşe alım kriterleri tanımlı mı?','Aday değerlendirme süreci kayıt altında mı?','Oryantasyon programı uygulanıyor mu?'],
+    'Eğitim ve Gelişim':     ['Yıllık eğitim planı hazırlanıyor mu?','Eğitim etkinliği değerlendiriliyor mu?','Çalışan yetkinlikleri belgeleniyor mu?'],
+    'İç Denetim':            ['Denetim programı yıllık olarak hazırlanıyor mu?','Denetim bulguları takip ediliyor mu?','DÖF süreci etkin işliyor mu?'],
+    'Döküman Yönetimi':      ['Prosedürler güncel ve onaylı mı?','Eski versiyonlar arşivleniyor mu?','Dağıtım listesi kontrol ediliyor mu?'],
+    'Üye Kayıt':             ['Üye kayıt formu eksiksiz dolduruluyor mu?','Üye bilgileri sistemde güncel mi?','Yeni üye bildirimleri zamanında yapılıyor mu?'],
+    'Üye Şikayet Yönetimi':  ['Şikayetler kayıt altına alınıyor mu?','Şikayet yanıt süreleri takip ediliyor mu?','Şikayet sonuçları üyeye bildiriliyor mu?'],
+};
+const DOK_TURLERI = ['Prosedür', 'Talimat', 'Mevzuat', 'Diğer Doküman'];
+
+/* Dış program aktif satır referansı */
+let disProgramAktifSatir = null;
+
+/* ── Panel Geçişleri ──────────────────────────── */
+function denPanel(panelId, navEl) {
+    document.querySelectorAll('#icDenetimModal .den-panel').forEach(p => p.classList.remove('aktif'));
+    document.querySelectorAll('#icDenetimModal .den-nav-item').forEach(n => n.classList.remove('active'));
+    const el = document.getElementById('panel-' + panelId);
+    if (el) el.classList.add('aktif');
+    if (navEl) navEl.classList.add('active');
+}
+function disDenPanel(panelId, navEl) {
+    document.querySelectorAll('.dis-den-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('#disDenetimModal .den-nav-item').forEach(n => n.classList.remove('active'));
+    const el = document.getElementById('dis-panel-' + panelId);
+    if (el) el.style.display = 'block';
+    if (navEl) navEl.classList.add('active');
+}
+
+/* ── Filtreleme ──────────────────────────── */
+function denFiltre(tbodyId, query) {
+    query = query.toLowerCase();
+    document.querySelectorAll(`#${tbodyId} tr`).forEach(tr => {
+        tr.style.display = tr.innerText.toLowerCase().includes(query) ? '' : 'none';
+    });
+}
+
+/* ── Onay ──────────────────────────── */
+function onaylaSorumlu(tip) {
+    const ad = document.getElementById(`sorumlu-ad-${tip}`).value.trim();
+    if (!ad) { alert('Lütfen bir isim yazınız!'); return; }
+    const tarih = new Date().toLocaleString('tr-TR');
+    document.getElementById(`onay-alani-${tip}`).innerHTML =
+        `<span class="onay-metni">✓ Gözden Geçiren: ${ad} | Onay Tarihi: ${tarih}</span>`;
+}
+
+/* ── Durum & Gecikme (İç Denetim) ──────────────────────────── */
+function durumGuncelle(selectEl, auditId) {
+    fetch(`/update_audit_status/${auditId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: selectEl.value })
+    }).catch(() => {});
+}
+function gecikmeNedeniGoster(selectEl) {
+    const nedenInput = selectEl.closest('tr').querySelector('.gecikme-neden');
+    if (nedenInput) nedenInput.style.display = selectEl.value === 'Gecikti' ? 'block' : 'none';
+}
+function gecikmeNedenKaydet(inputEl, auditId) {
+    fetch(`/update_audit_gecikme/${auditId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gecikme_neden: inputEl.value })
+    }).catch(() => {});
+}
+
+/* ── Dış Denetim Durum Güncelle ──────────────────────────── */
+function disProgramDurumGuncelle(selectEl, disId) {
+    fetch(`/dis_denetim_durum/${disId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ durum: selectEl.value })
+    }).catch(() => {});
+}
+
+/* ── İç Denetim Programı Düzenle (inline) ──────────────────────── */
+function icProgramDuzenle(btn, auditId) {
+    const tr = btn.closest('tr');
+    const birimTd = tr.cells[1];
+    const tarihTd = tr.cells[2];
+    if (btn.innerText.trim().startsWith('Düzenle')) {
+        birimTd.innerHTML = `<input class="inline-edit-input" value="${birimTd.innerText.trim()}">`;
+        tarihTd.innerHTML = `<input type="date" class="inline-edit-input" value="${tarihTd.innerText.trim()}">`;
+        btn.innerHTML = '<i class="bi bi-check2"></i> Kaydet';
+        btn.classList.remove('btn-duzenle'); btn.classList.add('btn-kurumsal');
+    } else {
+        const birim = birimTd.querySelector('input').value;
+        const tarih = tarihTd.querySelector('input').value;
+        fetch(`/update_audit/${auditId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ department: birim, date: tarih })
+        }).catch(() => {});
+        birimTd.innerText = birim;
+        tarihTd.innerText = tarih;
+        btn.innerHTML = '<i class="bi bi-pencil"></i> Düzenle';
+        btn.classList.add('btn-duzenle'); btn.classList.remove('btn-kurumsal');
+    }
+}
+
+/* ── Dış Denetim Programı Düzenle ──────────────────────────── */
+function disProgramDuzenle(btn) {
+    const tr = btn.closest('tr');
+    disProgramAktifSatir = tr;
+    const cells = tr.cells;
+    document.getElementById('disprog-kurum').value    = cells[0]?.innerText.trim() || '';
+    document.getElementById('disprog-tur').value      = cells[1]?.innerText.trim() || '';
+    document.getElementById('disprog-standart').value = cells[3]?.innerText.trim() || '';
+    document.getElementById('disprog-surec').value    = cells[4]?.innerText.trim() || '';
+    const durumSel = cells[5]?.querySelector('select');
+    const durumVal = durumSel ? durumSel.value : (cells[5]?.innerText.trim() || 'Planlandı');
+    const disprogDurum = document.getElementById('disprog-durum');
+    if (disprogDurum) disprogDurum.value = durumVal;
+    new bootstrap.Modal(document.getElementById('disProgramDuzModal')).show();
+}
+function disProgramKaydet() {
+    if (!disProgramAktifSatir) return;
+    const cells = disProgramAktifSatir.cells;
+    cells[0].innerHTML = `<strong>${document.getElementById('disprog-kurum').value}</strong>`;
+    cells[1].innerText = document.getElementById('disprog-tur').value;
+    cells[3].innerText = document.getElementById('disprog-standart').value;
+    cells[4].innerText = document.getElementById('disprog-surec').value;
+    const durumVal = document.getElementById('disprog-durum').value;
+    const durumSel = cells[5]?.querySelector('select');
+    if (durumSel) durumSel.value = durumVal;
+    bootstrap.Modal.getInstance(document.getElementById('disProgramDuzModal')).hide();
+}
+
+/* ── Denetçi Düzenleme ──────────────────────────── */
+function denetciDuzenle(btn, id) {
+    const tr = btn.closest('tr');
+    document.getElementById('duz-denetci-id').value  = id;
+    document.getElementById('duz-ad').value           = tr.querySelector('.denetci-ad')?.innerText.trim() || '';
+    document.getElementById('duz-birim').value        = tr.querySelector('.denetci-birim')?.innerText.trim() || '';
+    document.getElementById('duz-gorevyeri').value    = tr.querySelector('.denetci-gorevyeri')?.innerText.trim().replace('—','') || '';
+    document.getElementById('duz-denetledigi').value  = tr.querySelector('.denetci-denetledigi')?.innerText.trim().replace('—','') || '';
+    document.getElementById('duz-sertifika').value    = tr.querySelector('.denetci-sertifika')?.innerText.trim() || '';
+    document.getElementById('duz-tarih').value        = tr.querySelector('.denetci-tarih')?.innerText.trim() || '';
+    new bootstrap.Modal(document.getElementById('denetciDuzModal')).show();
+}
+
+/* ── Dış Denetçi Düzenleme ──────────────────────────── */
+function disDenetciDuzenle(btn, id) {
+    const tr = btn.closest('tr');
+    const cells = tr.cells;
+    document.getElementById('dis-duz-id').value       = id;
+    document.getElementById('dis-duz-kurum').value    = cells[0]?.innerText.trim() || '';
+    document.getElementById('dis-duz-ad').value       = cells[1]?.innerText.trim() || '';
+    document.getElementById('dis-duz-uzmanlik').value = cells[2]?.innerText.trim() || '';
+    document.getElementById('dis-duz-iletisim').value = cells[3]?.innerText.trim() || '';
+    new bootstrap.Modal(document.getElementById('disDenetciDuzModal')).show();
+}
+
+/* ── Bulgu Düzenleme ──────────────────────────── */
+function bulgDuzenle(btn, id) {
+    const tr = btn.closest('tr');
+    const cells = tr.cells;
+    document.getElementById('bulgduz-id').value       = id;
+    document.getElementById('bulgduz-iso').value      = cells[2]?.innerText.trim() || '';
+    document.getElementById('bulgduz-aciklama').value = cells[3]?.innerText.trim() || '';
+    document.getElementById('bulgduz-sorumlu').value  = cells[4]?.innerText.trim() || '';
+    document.getElementById('bulgduz-tarih').value    = cells[5]?.innerText.trim() || '';
+    const tipText = cells[1]?.innerText.trim();
+    const tipSel  = document.getElementById('bulgduz-tip');
+    if (tipText.includes('Majör'))      tipSel.value = 'Majör Uygunsuzluk';
+    else if (tipText.includes('Minör')) tipSel.value = 'Minör Uygunsuzluk';
+    else                                tipSel.value = 'Gözlem';
+    document.getElementById('bulgDuzForm').action = `/bulgu_duzenle/${id}`;
+    new bootstrap.Modal(document.getElementById('bulgDuzModal')).show();
+}
+function disBulgDuzenle(btn, id) {
+    const tr = btn.closest('tr');
+    const cells = tr.cells;
+    document.getElementById('bulgduz-id').value       = id;
+    document.getElementById('bulgduz-iso').value      = cells[2]?.innerText.trim() || '';
+    document.getElementById('bulgduz-aciklama').value = cells[3]?.innerText.trim() || '';
+    document.getElementById('bulgduz-sorumlu').value  = cells[4]?.innerText.trim() || '';
+    document.getElementById('bulgduz-tarih').value    = cells[5]?.innerText.trim() || '';
+    const tipText = cells[1]?.innerText.trim();
+    const tipSel  = document.getElementById('bulgduz-tip');
+    if (tipText.includes('Majör'))      tipSel.value = 'Majör Uygunsuzluk';
+    else if (tipText.includes('Minör')) tipSel.value = 'Minör Uygunsuzluk';
+    else                                tipSel.value = 'Gözlem';
+    document.getElementById('bulgDuzForm').action = `/dis_bulgu_duzenle/${id}`;
+    new bootstrap.Modal(document.getElementById('bulgDuzModal')).show();
+}
+
+/* ── OFI Düzenleme ──────────────────────────── */
+function ofiDuzenle(btn, id) {
+    const tr = btn.closest('tr');
+    const cells = tr.cells;
+    document.getElementById('ofi-duz-id').value       = id;
+    document.getElementById('ofi-duz-no').value       = cells[0]?.innerText.trim() || '';
+    document.getElementById('ofi-duz-madde').value    = cells[1]?.innerText.trim() || '';
+    document.getElementById('ofi-duz-aciklama').value = cells[2]?.innerText.trim() || '';
+    document.getElementById('ofi-duz-birim').value    = cells[3]?.innerText.trim() || '';
+    document.getElementById('ofi-duz-aksiyon').value  = cells[4]?.querySelector('input')?.value || cells[4]?.innerText.trim() || '';
+    new bootstrap.Modal(document.getElementById('ofiDuzModal')).show();
+}
+
+/* ══════════════════════════════════════════════════════
+   UYGUNSUZLUĞA AKTAR — Risk Hesaplama
+══════════════════════════════════════════════════════ */
+function aktarRiskHesapla() {
+    const olasilik = parseInt(document.getElementById('aktar-olasilik').value) || 0;
+    const etki     = parseInt(document.getElementById('aktar-etki').value) || 0;
+    const skor     = olasilik * etki;
+
+    const gosterEl = document.getElementById('aktar-risk-goster');
+    const saklEl   = document.getElementById('aktar-risk-skoru');
+
+    if (skor === 0) {
+        gosterEl.textContent = '—';
+        gosterEl.style.cssText = 'background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:5px 10px; font-size:14px; font-weight:700; min-height:31px; color:#333;';
+        saklEl.value = '';
+        return;
+    }
+
+    saklEl.value = skor;
+
+    let seviye = '', stil = '';
+    if (skor <= 4)  { seviye = 'Düşük';  stil = 'background:#d4edda;color:#155724;'; }
+    else if (skor <= 9)  { seviye = 'Orta';   stil = 'background:#fff3cd;color:#856404;'; }
+    else if (skor <= 14) { seviye = 'Yüksek'; stil = 'background:#f8d7da;color:#842029;'; }
+    else                 { seviye = 'Kritik'; stil = 'background:#dc3545;color:#fff;'; }
+
+    gosterEl.textContent = skor + ' — ' + seviye;
+    gosterEl.style.cssText = stil + 'border:1px solid #dee2e6; border-radius:6px; padding:5px 10px; font-size:13px; font-weight:700; min-height:31px;';
+}
+
+/* ══════════════════════════════════════════════════════
+   UYGUNSUZLUĞA AKTAR — Modal Aç
+══════════════════════════════════════════════════════ */
+function aktarUygunsuzluk(tip, iso, aciklama, sorumlu, tarih, kaynak) {
+    const kaynakTuru = kaynak || 'İç Denetim';
+
+    let normalTip = tip || '';
+    if (normalTip.toLowerCase().includes('majör'))  normalTip = 'Majör';
+    else if (normalTip.toLowerCase().includes('minör')) normalTip = 'Minör';
+    else normalTip = 'Gözlem';
+
+    /* Otomatik gelen alanları doldur */
+    document.getElementById('aktar-tanim').value    = aciklama || '';
+    document.getElementById('aktar-sorumlu').value  = sorumlu  || '';
+    document.getElementById('aktar-tarih').value    = tarih    || '';
+    document.getElementById('aktar-kaynak').value   = kaynakTuru;
+    document.getElementById('aktar-tip').value      = normalTip;
+    document.getElementById('aktar-iso').value      = iso || '';
+
+    /* Boş bırakılacak alanlar — kullanıcı dolduracak */
+    document.getElementById('aktar-surec').value    = '';
+    document.getElementById('aktar-mudurluk').value = '';
+    document.getElementById('aktar-yer').value      = '';
+    document.getElementById('aktar-olasilik').value = '';
+    document.getElementById('aktar-etki').value     = '';
+    document.getElementById('aktar-risk-skoru').value = '';
+
+    /* Badge'leri güncelle */
+    document.getElementById('aktar-kaynak-goster').textContent = kaynakTuru;
+    document.getElementById('aktar-tip-goster').textContent    = normalTip;
+
+    /* Risk göstergesini sıfırla */
+    const riskGoster = document.getElementById('aktar-risk-goster');
+    riskGoster.textContent = '—';
+    riskGoster.style.cssText = 'background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:5px 10px; font-size:14px; font-weight:700; min-height:31px; color:#333;';
+
+    /* Hata mesajını temizle */
+    const hataEl = document.getElementById('aktar-hata');
+    if (hataEl) { hataEl.style.display = 'none'; hataEl.textContent = ''; }
+
+    /* Butonu sıfırla */
+    const btn = document.getElementById('aktar-kaydet-btn');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-save me-1"></i>Uygunsuzluğa Kaydet'; }
+
+    new bootstrap.Modal(document.getElementById('aktarModal')).show();
+}
+
+/* ── Aktar modal kaydet ──────────────────────────── */
+function aktarModalKaydet() {
+    const hataEl = document.getElementById('aktar-hata');
+    hataEl.style.display = 'none';
+
+    const tanim    = document.getElementById('aktar-tanim').value.trim();
+    const mudurluk = document.getElementById('aktar-mudurluk').value.trim();
+    const tarih    = document.getElementById('aktar-tarih').value.trim();
+    const sorumlu  = document.getElementById('aktar-sorumlu').value.trim();
+
+    if (!tanim)    { hataEl.textContent = 'Uygunsuzluk tanımı zorunludur.'; hataEl.style.display='block'; return; }
+    if (!mudurluk) { hataEl.textContent = 'Müdürlük / Birim zorunludur.';  hataEl.style.display='block'; return; }
+    if (!tarih)    { hataEl.textContent = 'Tespit tarihi zorunludur.';      hataEl.style.display='block'; return; }
+    if (!sorumlu)  { hataEl.textContent = 'Sorumlu zorunludur.';            hataEl.style.display='block'; return; }
+
+    const veri = {
+        tanim:             tanim,
+        kaynak_turu:       document.getElementById('aktar-kaynak').value,
+        uygunsuzluk_tipi:  document.getElementById('aktar-tip').value,
+        ilgili_surec:      document.getElementById('aktar-surec').value.trim(),
+        mudurluk:          mudurluk,
+        tespit_tarihi:     tarih,
+        tespit_yeri:       document.getElementById('aktar-yer').value.trim(),
+        sorumlu:           sorumlu,
+        olasilik:          document.getElementById('aktar-olasilik').value || null,
+        etki:              document.getElementById('aktar-etki').value || null,
+        risk_skoru:        document.getElementById('aktar-risk-skoru').value || null,
+        durum:             'Açık'
+    };
+
+    const btn = document.getElementById('aktar-kaydet-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Kaydediliyor...';
+
+    fetch('/uygunsuzluk/ekle', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(veri)
+    })
+    .then(r => r.json())
+    .then(function(sonuc) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-1"></i>Uygunsuzluğa Kaydet';
+        if (sonuc.hata) {
+            hataEl.textContent = 'Hata: ' + sonuc.hata;
+            hataEl.style.display = 'block';
+            return;
+        }
+        bootstrap.Modal.getInstance(document.getElementById('aktarModal')).hide();
+        const toast = document.getElementById('aktar-basari-toast');
+        if (toast) {
+            document.getElementById('aktar-basari-id').textContent = sonuc.id;
+            new bootstrap.Toast(toast).show();
+        } else {
+            alert('✓ Uygunsuzluk kaydı oluşturuldu. (ID: ' + sonuc.id + ')');
+        }
+    })
+    .catch(function(err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-1"></i>Uygunsuzluğa Kaydet';
+        hataEl.textContent = 'Bağlantı hatası: ' + err;
+        hataEl.style.display = 'block';
+    });
+}
+
+/* ── İyileştirme Aktar ──────────────────────────── */
+function aktarIyilestirme(oneri_no, madde, aciklama, birim, aksiyon) {
+  if (!oneri_no) {
+    oneri_no = prompt('Öneri No giriniz (benzersiz olmalı):', 'OFI-' + Date.now());
+    if (!oneri_no) return;
+  }
+  const veri = {
+    oneri_no:      oneri_no,
+    kaynak:        'Dış Denetim',
+    ilgili_madde:  madde  || '',
+    aciklama:      aciklama,
+    ilgili_birim:  birim  || '',
+    aksiyon:       aksiyon || '',
+    oncelik:       'Orta',
+    durum:         'Değerlendirmede',
+    tamamlanma:    0,
+    etki:          2,
+    kolaylik:      2
+  };
+  fetch('/oneriler/ekle', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(veri)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.hata) {
+      alert('İyileştirme aktarılamadı: ' + data.hata);
+    } else {
+      alert('✓ İyileştirme önerisi oluşturuldu. (ID: ' + data.id + ')');
+    }
+  })
+  .catch(err => alert('Bağlantı hatası: ' + err));
+}
+
+function disBulguDofGoster(sel) {
+    const el = document.getElementById('dis-dof-oneri');
+    if (el) el.style.display = (sel.value === 'Majör Uygunsuzluk' || sel.value === 'Minör Uygunsuzluk') ? 'block' : 'none';
+}
+
+/* ══════════════════════════════════════════════════════
+   KAPSAM CRUD
+══════════════════════════════════════════════════════ */
+function kapsamEkleFormuAc() {
+    document.getElementById('kapsam-form-alani').style.display = 'block';
+    document.getElementById('kapsam-mudürlük').focus();
+}
+function kapsamKaydet() {
+    const mudürlük = document.getElementById('kapsam-mudürlük').value.trim();
+    const surec    = document.getElementById('kapsam-surec').value.trim();
+    if (!mudürlük || !surec) { alert('Müdürlük ve Süreç alanları zorunludur!'); return; }
+    kapsamVerisi.push({
+        id: kapsamIdSay++, mudürlük, surec,
+        donem:    document.getElementById('kapsam-donem').value.trim()    || '2025',
+        standart: document.getElementById('kapsam-standart').value.trim() || 'ISO 9001',
+        dahil:    document.getElementById('kapsam-dahil').value,
+        aciklama: document.getElementById('kapsam-aciklama').value.trim(),
+    });
+    ['kapsam-mudürlük','kapsam-surec','kapsam-donem','kapsam-standart','kapsam-aciklama']
+        .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('kapsam-form-alani').style.display = 'none';
+    tumunuYenile();
+}
+function kapsamDuz(id) {
+    kapsamDuzIdx = kapsamVerisi.findIndex(k => k.id === id);
+    if (kapsamDuzIdx < 0) return;
+    const k = kapsamVerisi[kapsamDuzIdx];
+    document.getElementById('kduz-mudürlük').value = k.mudürlük;
+    document.getElementById('kduz-surec').value    = k.surec;
+    document.getElementById('kduz-donem').value    = k.donem;
+    document.getElementById('kduz-standart').value = k.standart;
+    document.getElementById('kduz-dahil').value    = k.dahil;
+    document.getElementById('kduz-aciklama').value = k.aciklama;
+    new bootstrap.Modal(document.getElementById('kapsamDuzModal')).show();
+}
+function kapsamDuzKaydet() {
+    if (kapsamDuzIdx === null || kapsamDuzIdx < 0) return;
+    kapsamVerisi[kapsamDuzIdx] = {
+        ...kapsamVerisi[kapsamDuzIdx],
+        mudürlük: document.getElementById('kduz-mudürlük').value.trim(),
+        surec:    document.getElementById('kduz-surec').value.trim(),
+        donem:    document.getElementById('kduz-donem').value.trim(),
+        standart: document.getElementById('kduz-standart').value.trim(),
+        dahil:    document.getElementById('kduz-dahil').value,
+        aciklama: document.getElementById('kduz-aciklama').value.trim(),
+    };
+    bootstrap.Modal.getInstance(document.getElementById('kapsamDuzModal')).hide();
+    tumunuYenile();
+}
+function kapsamSil(id) {
+    if (!confirm('Bu kapsam kaydını silmek istediğinize emin misiniz?')) return;
+    kapsamVerisi = kapsamVerisi.filter(k => k.id !== id);
+    tumunuYenile();
+}
+
+/* ── Müdürlük grupları ──────────────────────────── */
+function getMudürlükGruplari() {
+    const gruplar = {};
+    kapsamVerisi.filter(k => k.dahil === 'Dahil').forEach(k => {
+        if (!gruplar[k.mudürlük]) gruplar[k.mudürlük] = [];
+        if (!gruplar[k.mudürlük].find(x => x.id === k.id)) gruplar[k.mudürlük].push(k);
+    });
+    return gruplar;
+}
+
+/* ══════════════════════════════════════════════════════
+   KAPSAM TABLOSU - müdürlük bazlı
+══════════════════════════════════════════════════════ */
+function kapsamTablosunuYenile() {
+    const kont = document.getElementById('kapsam-mudürlük-container');
+    if (!kont) return;
+    if (kapsamVerisi.length === 0) {
+        kont.innerHTML = '<div class="text-center text-muted py-4">Kapsam kaydı bulunmuyor.</div>';
+        return;
+    }
+    const gruplar = getMudürlükGruplari();
+    let html = '';
+    Object.entries(gruplar).forEach(([mudürlük, kayitlar]) => {
+        html += `
+        <div class="kapsam-mudürlük-baslik">
+            <i class="bi bi-building"></i> ${mudürlük}
+            <span class="ms-auto" style="font-size:10px;font-weight:400;opacity:.75;">${kayitlar.length} süreç</span>
+        </div>
+        <div style="overflow-x:auto;">
+        <table class="den-table">
+            <thead>
+                <tr>
+                    <th>Süreç</th>
+                    <th>Dönem</th>
+                    <th>Standart</th>
+                    <th>Kapsama Dahil</th>
+                    <th>Açıklama</th>
+                    <th class="admin-ozel" style="background:#1f2d3d;">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+            ${kayitlar.map(k => `
+                <tr>
+                    <td><strong>${k.surec}</strong></td>
+                    <td>${k.donem}</td>
+                    <td><span class="iso-ref">${k.standart}</span></td>
+                    <td><span class="badge-durum ${k.dahil === 'Dahil' ? 'tamamlandı' : 'gecikti'}">${k.dahil}</span></td>
+                    <td>${k.aciklama}</td>
+                    <td class="admin-ozel">
+                        <div class="d-flex gap-1">
+                            <button class="btn-aksiyon btn-duzenle" onclick="kapsamDuz(${k.id})"><i class="bi bi-pencil"></i> Düzenle</button>
+                            <button class="btn-aksiyon btn-sil" onclick="kapsamSil(${k.id})"><i class="bi bi-trash"></i> Sil</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('')}
+            </tbody>
+        </table>
+        </div>`;
+    });
+    kont.innerHTML = html;
+}
+
+/* ══════════════════════════════════════════════════════
+   KRİTER TABLOSU - müdürlük bazlı
+══════════════════════════════════════════════════════ */
+function kriterTablosunuYenile() {
+    const tbody = document.getElementById('kriter-tbody');
+    if (!tbody) return;
+    if (kapsamVerisi.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Kapsam tablosundan veri bekleniyor.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = kapsamVerisi.map(k => `
+        <tr>
+            <td><strong>${k.mudürlük}</strong></td>
+            <td>${k.surec}</td>
+
+            <td>
+                <select class="form-select form-select-sm" style="font-size:11px;min-width:130px;">
+                    ${DOK_TURLERI.map(d => `<option>${d}</option>`).join('')}
+                </select>
+            </td>
+            <td><input class="form-control form-control-sm" style="font-size:11px;" placeholder="Doküman adı / kodu"></td>
+            <td><textarea class="form-control form-control-sm" style="font-size:11px;min-width:160px;" rows="1" placeholder="Açıklama / kriter notu"></textarea></td>
+        </tr>
+    `).join('');
+}
+
+/* ══════════════════════════════════════════════════════
+   KONTROL LİSTESİ
+══════════════════════════════════════════════════════ */
+function soruKeyOlustur(mudürlük, surec) { return mudürlük + '___' + surec; }
+
+function soruVerisiniBaslat() {
+    kapsamVerisi.filter(k => k.dahil === 'Dahil').forEach(k => {
+        const key = soruKeyOlustur(k.mudürlük, k.surec);
+        if (!soruVerisi[key]) {
+            const sablon = SORU_SABLONLARI[k.surec] || [
+                `${k.surec} süreci prosedürlere uygun yürütülüyor mu?`,
+                `${k.surec} kayıtları eksiksiz ve güncel mi?`,
+                `${k.surec} performansı izleniyor mu?`,
+            ];
+            soruVerisi[key] = sablon.map(metin => ({ id: soruIdSay++, iso: '9.2', metin, cevap: '' }));
+        }
+    });
+}
+
+function checklistYenile() {
+    const container = document.getElementById('checklist-container');
+    const bosMsg    = document.getElementById('checklist-bos-mesaj');
+    const filtre    = document.getElementById('checklist-mudürlük-filtre');
+    if (!container) return;
+    soruVerisiniBaslat();
+    const dahilOlanlar = kapsamVerisi.filter(k => k.dahil === 'Dahil');
+    if (dahilOlanlar.length === 0) {
+        if (bosMsg) bosMsg.style.display = 'block';
+        updateChecklistProgress(); return;
+    }
+    if (bosMsg) bosMsg.style.display = 'none';
+    const mudürlükler = [...new Set(dahilOlanlar.map(k => k.mudürlük))];
+    if (filtre) {
+        filtre.innerHTML = '<option value="tum">Tüm Müdürlükler</option>' +
+            mudürlükler.map(m => `<option value="${m}">${m}</option>`).join('');
+    }
+    const gruplar = getMudürlükGruplari();
+    let html = '';
+    Object.entries(gruplar).forEach(([mudürlük, kayitlar]) => {
+        html += `<div class="checklist-grup-baslik" data-mudürlük="${mudürlük}">📂 ${mudürlük}</div>`;
+        kayitlar.forEach(k => {
+            const key = soruKeyOlustur(mudürlük, k.surec);
+            const sorular = soruVerisi[key] || [];
+            html += `
+            <div class="checklist-surec-baslik" data-mudürlük="${mudürlük}">
+                <span>↳ ${k.surec}</span>
+                <button class="btn-aksiyon btn-duzenle admin-ozel" style="font-size:10px;" onclick="soruEkleAc('${key}')">
+                    <i class="bi bi-plus"></i> Soru Ekle
+                </button>
+            </div>`;
+            sorular.forEach((soru, i) => {
+                html += `
+                <div class="check-item" data-mudürlük="${mudürlük}">
+                    <input type="checkbox" onchange="checkToggle(this)">
+                    <span class="iso-ref">${soru.iso}</span>
+                    <span style="flex:1;">${soru.metin}</span>
+                    <textarea class="form-control form-control-sm" style="width:200px;font-size:11px;" rows="1"
+                        placeholder="Cevap / not..."
+                        onblur="soruCevapKaydet('${key}',${i},this.value)">${soru.cevap||''}</textarea>
+                    <button class="btn-aksiyon btn-duzenle admin-ozel" style="font-size:10px;flex-shrink:0;" onclick="soruDuzenleAc('${key}',${i})"><i class="bi bi-pencil"></i></button>
+                </div>`;
+            });
+            if (sorular.length === 0) {
+                html += `<div class="check-item text-muted" data-mudürlük="${mudürlük}" style="font-style:italic;font-size:12px;">Henüz soru eklenmedi.</div>`;
+            }
+        });
+    });
+    container.innerHTML = html;
+    updateChecklistProgress();
+}
+
+function soruEkleAc(key) {
+    soruDuzKey = key; soruDuzIdx = null;
+    document.getElementById('soruModalBaslik').innerHTML = '<i class="bi bi-plus-circle me-2"></i>Yeni Soru Ekle';
+    document.getElementById('soruduz-metin').value = '';
+    document.getElementById('soruduz-iso').value   = '9.2';
+    new bootstrap.Modal(document.getElementById('soruDuzModal')).show();
+}
+function soruDuzenleAc(key, idx) {
+    soruDuzKey = key; soruDuzIdx = idx;
+    const soru = soruVerisi[key][idx];
+    document.getElementById('soruModalBaslik').innerHTML = '<i class="bi bi-pencil me-2"></i>Soru Düzenle';
+    document.getElementById('soruduz-metin').value = soru.metin;
+    document.getElementById('soruduz-iso').value   = soru.iso;
+    new bootstrap.Modal(document.getElementById('soruDuzModal')).show();
+}
+function soruKaydet() {
+    const metin = document.getElementById('soruduz-metin').value.trim();
+    const iso   = document.getElementById('soruduz-iso').value.trim() || '9.2';
+    if (!metin) { alert('Soru metni boş olamaz!'); return; }
+    if (!soruVerisi[soruDuzKey]) soruVerisi[soruDuzKey] = [];
+    if (soruDuzIdx === null) {
+        soruVerisi[soruDuzKey].push({ id: soruIdSay++, iso, metin, cevap: '' });
+    } else {
+        soruVerisi[soruDuzKey][soruDuzIdx].metin = metin;
+        soruVerisi[soruDuzKey][soruDuzIdx].iso   = iso;
+    }
+    bootstrap.Modal.getInstance(document.getElementById('soruDuzModal')).hide();
+    checklistYenile();
+}
+function soruCevapKaydet(key, idx, deger) {
+    if (soruVerisi[key] && soruVerisi[key][idx]) soruVerisi[key][idx].cevap = deger;
+}
+
+function checklistMudürlükFiltrele(value) {
+    const label = document.getElementById('checklist-birim-label');
+    if (label) label.textContent = value === 'tum' ? 'Tüm Müdürlükler' : value;
+    document.querySelectorAll('#checklist-container [data-mudürlük]').forEach(el => {
+        el.style.display = (value === 'tum' || el.getAttribute('data-mudürlük') === value) ? '' : 'none';
+    });
+    updateChecklistProgress();
+}
+function checkToggle(el) {
+    el.closest('.check-item').classList.toggle('checked', el.checked);
+    updateChecklistProgress();
+}
+function updateChecklistProgress() {
+    const visibleCbs = Array.from(
+        document.querySelectorAll('#checklist-container .check-item:not([style*="display: none"]) input[type=checkbox]')
+    );
+    const checked = visibleCbs.filter(c => c.checked);
+    const pct = visibleCbs.length ? Math.round(checked.length / visibleCbs.length * 100) : 0;
+    const bar = document.getElementById('checklist-bar');
+    const lbl = document.getElementById('checklist-pct');
+    if (bar) bar.style.width = pct + '%';
+    if (lbl) lbl.textContent = `${checked.length} / ${visibleCbs.length}`;
+}
+
+function tumunuYenile() {
+    kapsamTablosunuYenile();
+    kriterTablosunuYenile();
+    checklistYenile();
+}
+
+/* ── Init ──────────────────────────── */
+document.addEventListener('DOMContentLoaded', function() {
+    tumunuYenile();
+});
+
+</script>
+
+{% endblock %}

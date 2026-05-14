@@ -1,0 +1,1875 @@
+{% extends "ana.html" %}
+{% block icerik %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+/* ── doc-card ── */
+.doc-card {
+    border: 1px solid #e5e7eb; border-radius: 16px; background: #fff;
+    transition: box-shadow .25s, transform .25s; height: 100%; overflow: hidden;
+}
+.doc-card:hover { box-shadow: 0 8px 32px rgba(37,99,235,.13); transform: translateY(-4px); }
+.doc-card-body { padding: 28px 24px 20px; display: flex; flex-direction: column; gap: 6px; }
+.doc-card-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+.doc-card-desc  { font-size: 12.5px; color: #64748b; min-height: 36px; }
+.doc-card-footer { padding: 0 24px 22px; }
+.btn-doc {
+    width: 100%; border-radius: 10px; border: 1.5px solid #2563eb; color: #2563eb;
+    background: transparent; font-size: 13px; font-weight: 600; padding: 9px 0;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    transition: background .18s, color .18s; cursor: pointer;
+}
+.btn-doc:hover { background: #2563eb; color: #fff; }
+
+/* ── Dış KPI kutusu ── */
+.dis-kpi-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.dis-kpi-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 12px 14px; text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.dis-kpi-num  { font-size: 24px; font-weight: 800; line-height: 1; }
+.dis-kpi-lbl  { font-size: 11px; color: #64748b; margin-top: 3px; }
+
+/* ── Sidebar ── */
+.sur-sidebar {
+    width: 220px; flex-shrink: 0; background: #1f2d3d;
+    min-height: 100%; padding: 16px 0; border-right: 1px solid rgba(255,255,255,.07);
+}
+.sur-sidebar-title {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    color: #94a3b8; padding: 0 16px 10px; text-transform: uppercase;
+}
+.sur-nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 500;
+    color: #cbd5e1; border-left: 3px solid transparent; transition: .12s;
+}
+.sur-nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+.sur-nav-item.active { background: rgba(37,99,235,.25); color: #93c5fd; border-left-color: #2563eb; }
+.sur-nav-item i { font-size: 14px; }
+.menu-badge {
+    margin-left: auto; background: #2563eb; color: #fff;
+    font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px;
+}
+
+/* ── Main area ── */
+.sur-main { flex: 1; padding: 24px; background: #f8fafc; overflow-y: auto; min-height: 0; }
+
+/* ── Panels ── */
+.sur-panel { display: none; }
+.sur-panel.aktif { display: block; }
+
+/* ── KPI cards (modal içi) ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap: 12px; margin-bottom: 20px; }
+.kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; text-align: center; }
+.kpi-card .kpi-num { font-size: 26px; font-weight: 800; line-height: 1; }
+.kpi-card .kpi-lbl { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+/* ── Card-kys ── */
+.card-kys { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+.card-kys .ck-header {
+    padding: 11px 16px; font-weight: 700; font-size: 13px;
+    border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px;
+    background: #fafbfc; border-radius: 8px 8px 0 0; color: #1e293b;
+}
+.card-kys .ck-body { padding: 16px; }
+
+/* ── Table ── */
+.sur-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sur-table thead th { background: #1f2d3d; color: #fff; padding: 10px 14px; font-weight: 600; font-size: 12px; white-space: nowrap; }
+.sur-table tbody td { padding: 9px 14px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+.sur-table tbody tr:hover td { background: #eff6ff; }
+
+/* ── Badges ── */
+.badge-aktif   { background: #dcfce7; color: #16a34a; border: 1px solid rgba(22,163,74,.3); padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-taslak  { background: #fef9c3; color: #92400e; border: 1px solid rgba(245,158,11,.3); padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-arsiv   { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+
+/* ── Action buttons ── */
+.btn-aksiyon { font-size: 11px; padding: 3px 9px; border-radius: 4px; border: none; cursor: pointer; white-space: nowrap; }
+.btn-detay   { background: #eff6ff; color: #1d4ed8; }
+.btn-detay:hover { background: #dbeafe; }
+.btn-duzenle { background: #f0fdf4; color: #16a34a; }
+.btn-duzenle:hover { background: #dcfce7; }
+.btn-sil     { background: #fef2f2; color: #b91c1c; }
+.btn-sil:hover { background: #fee2e2; }
+
+/* ── Müdürlük card grid ── */
+.mudürlük-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 14px; }
+.mudürlük-kart { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+.mk-baslik {
+    background: #1f2d3d; border-bottom: 2px solid #2563eb;
+    padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 700; color: #93c5fd;
+}
+.mk-liste { padding: 4px 0; }
+.mk-surec {
+    display: flex; align-items: center; gap: 8px; padding: 9px 14px;
+    font-size: 12px; color: #475569; cursor: pointer; transition: background .12s;
+    border-bottom: 1px solid #f1f5f9;
+}
+.mk-surec:last-child { border-bottom: none; }
+.mk-surec:hover { background: #eff6ff; color: #1d4ed8; }
+.mk-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mk-dot.aktif  { background: #16a34a; }
+.mk-dot.taslak { background: #d97706; }
+.mk-dot.arsiv  { background: #94a3b8; }
+
+/* ── Detay view ── */
+.detay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.detay-bilgi { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; }
+.dbk-baslik { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.dbk-baslik i { color: #3b82f6; }
+.dbk-satir { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+.dbk-satir:last-child { border-bottom: none; }
+.dbk-etiket { color: #94a3b8; min-width: 90px; font-weight: 500; }
+.dbk-deger  { color: #1e293b; font-weight: 600; }
+.io-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.io-kutu { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; }
+.io-baslik { font-size: 11px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+.io-item { font-size: 12px; color: #475569; padding: 4px 0; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 6px; }
+.io-item:last-child { border-bottom: none; }
+
+/* ── Şema önizleme ── */
+.sema-preview-wrap {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    overflow: hidden; position: relative;
+}
+.sema-preview-svg {
+    width: 100%; height: 180px; display: block;
+    background-color: #f8fafc;
+    background-image: radial-gradient(circle, #dde3eb 1px, transparent 1px);
+    background-size: 16px 16px;
+}
+.sema-preview-actions {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-top: 1px solid #e2e8f0;
+    background: #fff;
+}
+.btn-preview-edit {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px; background: #2563eb; color: #fff;
+    border: none; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: background .15s; font-family: inherit;
+}
+.btn-preview-edit:hover { background: #1d4ed8; }
+.btn-preview-zoom {
+    display: flex; align-items: center; gap: 5px;
+    padding: 6px 12px; background: #f1f5f9; color: #475569;
+    border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px;
+    cursor: pointer; transition: background .15s; font-family: inherit;
+}
+.btn-preview-zoom:hover { background: #e2e8f0; }
+
+/* Önizleme büyütme overlay */
+.preview-lightbox {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    backdrop-filter: blur(4px); z-index: 99999;
+    align-items: center; justify-content: center;
+}
+.preview-lightbox.open { display: flex; }
+.preview-lb-inner {
+    background: #fff; border-radius: 14px; width: 90vw; height: 80vh;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+.preview-lb-head {
+    background: #1f2d3d; padding: 12px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-radius: 14px 14px 0 0;
+}
+.preview-lb-head h4 { color: #fff; font-size: 14px; margin: 0; display: flex; align-items: center; gap: 8px; }
+.preview-lb-head h4 i { color: #3b82f6; }
+.preview-lb-close {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,.1); color: #cbd5e1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; transition: background .15s;
+}
+.preview-lb-close:hover { background: rgba(239,68,68,.4); color: #f87171; }
+.preview-lb-body {
+    flex: 1; overflow: hidden; position: relative;
+    background-color: #f8fafc;
+    background-image: radial-gradient(circle, #dde3eb 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+.preview-lb-svg { width: 100%; height: 100%; }
+.preview-lb-foot {
+    padding: 10px 18px; border-top: 1px solid #e2e8f0;
+    display: flex; align-items: center; gap: 10px; background: #fff;
+    border-radius: 0 0 14px 14px;
+}
+
+/* ══ BPMN EDİTÖR ══ */
+.bpmn-wrap { display: flex; flex-direction: column; height: 100%; background: #f1f5f9; overflow: hidden; }
+
+/* Toolbar */
+.bpmn-toolbar {
+    background: #1f2d3d; padding: 0 12px; height: 46px;
+    display: flex; align-items: center; gap: 3px; flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.bpmn-tbgroup { display: flex; align-items: center; gap: 2px; padding-right: 8px; border-right: 1px solid rgba(255,255,255,.1); margin-right: 4px; }
+.bpmn-tbgroup:last-child { border-right: none; margin-left: auto; }
+.tb { width: 32px; height: 32px; border-radius: 5px; background: transparent; border: 1px solid transparent; color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all .12s; font-family: inherit; }
+.tb:hover { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.15); }
+.tb.on { background: #2563eb; color: #fff; border-color: #2563eb; }
+.tb.red:hover { background: rgba(239,68,68,.15); color: #f87171; }
+.surec-adi-input {
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15);
+    border-radius: 5px; padding: 5px 10px; color: #e2e8f0; font-size: 13px;
+    font-family: inherit; min-width: 180px; outline: none;
+}
+.surec-adi-input:focus { border-color: #2563eb; }
+.surec-adi-input::placeholder { color: #64748b; }
+.zoom-lbl { color: #64748b; font-size: 11px; min-width: 36px; text-align: center; font-weight: 600; }
+.kaydet-btn { display: flex; align-items: center; gap: 5px; padding: 5px 12px; background: #16a34a; color: #fff; border: none; border-radius: 5px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: background .12s; }
+.kaydet-btn:hover { background: #15803d; }
+
+/* Layout */
+.bpmn-layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+
+/* Palette */
+.bpmn-palette {
+    width: 180px; flex-shrink: 0; background: #1f2d3d;
+    display: flex; flex-direction: column; overflow-y: auto;
+    border-right: 1px solid rgba(255,255,255,.07);
+}
+.pal-section { padding: 8px 12px 4px; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; }
+.pal-item {
+    display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+    cursor: grab; border-left: 2px solid transparent; transition: all .12s;
+    font-size: 12px; color: #94a3b8; user-select: none;
+}
+.pal-item:hover { background: rgba(255,255,255,.06); color: #e2e8f0; border-left-color: #3b82f6; }
+.pal-item:active { cursor: grabbing; }
+.pal-shape { width: 26px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ps-start { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #22c55e; background: rgba(34,197,94,.2); }
+.ps-end   { width: 18px; height: 18px; border-radius: 50%; border: 3px solid #ef4444; background: rgba(239,68,68,.2); }
+.ps-ara   { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #f59e0b; background: rgba(245,158,11,.15); position: relative; }
+.ps-ara::after { content:''; position:absolute; inset:3px; border-radius:50%; border:1px solid #f59e0b; }
+.ps-task  { width: 28px; height: 18px; border-radius: 3px; border: 1.5px solid #60a5fa; background: rgba(96,165,250,.15); }
+.ps-user  { width: 28px; height: 18px; border-radius: 3px; border: 1.5px solid #a78bfa; background: rgba(167,139,250,.15); }
+.ps-send  { width: 28px; height: 18px; border-radius: 3px; border: 1.5px solid #34d399; background: rgba(52,211,153,.15); }
+.ps-recv  { width: 28px; height: 18px; border-radius: 3px; border: 1.5px solid #f87171; background: rgba(248,113,113,.15); }
+.ps-gw    { width: 20px; height: 20px; transform: rotate(45deg); border: 1.5px solid #fde047; background: rgba(253,224,71,.1); }
+.ps-pgw   { width: 20px; height: 20px; transform: rotate(45deg); border: 1.5px solid #60a5fa; background: rgba(96,165,250,.1); }
+.ps-note  { width: 24px; height: 16px; border: 1px dashed #64748b; background: rgba(253,224,71,.08); border-radius: 2px; }
+
+/* Canvas */
+.bpmn-canvas-wrap {
+    flex: 1; position: relative; overflow: hidden;
+    background-color: #f8fafc;
+    background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+    background-size: 20px 20px;
+    cursor: default;
+}
+.bpmn-canvas-wrap.el-mode { cursor: grab; }
+.bpmn-canvas-wrap.el-mode.dragging { cursor: grabbing; }
+.bpmn-canvas-wrap.conn-mode { cursor: crosshair; }
+#bpmn-canvas { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+
+/* Elements */
+.bel { position: absolute; cursor: move; user-select: none; z-index: 10; }
+.bel.sel .bel-inner { outline: 2px solid #2563eb; outline-offset: 3px; border-radius: 4px; }
+.bel-inner { position: relative; display: flex; align-items: center; justify-content: center; text-align: center; }
+.bel-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #475569; white-space: nowrap; pointer-events: none; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+
+/* BPMN shapes */
+.bpol { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.bpol.start { border: 2px solid #22c55e; background: rgba(34,197,94,.15); }
+.bpol.end   { border: 3px solid #ef4444; background: rgba(239,68,68,.15); }
+.bpol.mid   { border: 2px solid #f59e0b; background: rgba(245,158,11,.15); }
+.bpol.mid-inner { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #f59e0b; display: flex; align-items: center; justify-content: center; }
+
+.bptask {
+    min-width: 100px; height: 56px; border-radius: 6px;
+    border: 1.5px solid #60a5fa; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 4px 10px;
+    font-size: 11px; font-weight: 600; color: #1e293b; line-height: 1.3;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.bptask.user { border-color: #a78bfa; background: rgba(167,139,250,.06); }
+.bptask.send { border-color: #34d399; background: rgba(52,211,153,.06); }
+.bptask.recv { border-color: #f87171; background: rgba(248,113,113,.06); }
+.bptask-icon { position: absolute; top: 3px; left: 5px; font-size: 10px; color: #94a3b8; }
+
+.bpgw { width: 46px; height: 46px; position: relative; display: flex; align-items: center; justify-content: center; }
+.bpgw-diamond { position: absolute; width: 42px; height: 42px; transform: rotate(45deg); border: 1.5px solid #fde047; background: rgba(253,224,71,.1); }
+.bpgw-diamond.parallel { border-color: #60a5fa; background: rgba(96,165,250,.1); }
+.bpgw-text { position: relative; z-index:1; font-size: 11px; font-weight: 800; color: #94a3b8; }
+
+.bpnote { min-width: 100px; min-height: 50px; padding: 6px 8px; font-size: 11px; color: #475569; background: rgba(253,224,71,.1); border: 1px dashed #d97706; border-radius: 0 8px 8px 8px; line-height: 1.4; }
+
+/* Connection points */
+.conn-pt {
+    position: absolute; width: 10px; height: 10px; border-radius: 50%;
+    background: #2563eb; border: 2px solid #fff; opacity: 0; z-index: 20;
+    transform: translate(-50%, -50%); cursor: crosshair; transition: opacity .12s;
+}
+.bel:hover .conn-pt, .bel.sel .conn-pt { opacity: 1; }
+.conn-pt:hover { transform: translate(-50%,-50%) scale(1.4); }
+
+/* SVG layer — pointer-events aktif çizgi tıklaması için */
+#svg-layer { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: all; z-index: 5; overflow: visible; }
+.conn-line { stroke: #94a3b8; stroke-width: 1.5; fill: none; pointer-events: stroke; cursor: pointer; }
+.conn-line:hover, .conn-line.sel { stroke: #2563eb; stroke-width: 2; }
+.conn-line.msg { stroke-dasharray: 5,3; stroke: #a78bfa; }
+.conn-lbl { font-size: 11px; fill: #64748b; font-family: inherit; pointer-events: none; }
+
+/* Properties panel */
+.bpmn-props {
+    width: 220px; flex-shrink: 0; background: #1f2d3d;
+    border-left: 1px solid rgba(255,255,255,.07);
+    display: flex; flex-direction: column; overflow-y: auto;
+}
+.props-header { padding: 11px 14px; font-size: 12px; font-weight: 700; color: #64748b; background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.07); display: flex; align-items: center; gap: 6px; }
+.props-header i { color: #3b82f6; }
+.props-field { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.05); }
+.props-label { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+.props-input {
+    width: 100%; padding: 5px 8px; border: 1px solid rgba(255,255,255,.12);
+    border-radius: 4px; font-family: inherit; font-size: 12px;
+    color: #e2e8f0; background: rgba(255,255,255,.06); outline: none;
+}
+.props-input:focus { border-color: #2563eb; }
+.props-empty { padding: 24px 16px; text-align: center; color: #475569; font-size: 12px; }
+.props-empty i { font-size: 24px; display: block; margin-bottom: 8px; opacity: .3; }
+.props-del { margin: 10px 12px; padding: 7px; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.2); color: #f87171; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; width: calc(100% - 24px); transition: all .12s; font-family: inherit; }
+.props-del:hover { background: #ef4444; color: #fff; }
+
+/* Status bar */
+.bpmn-status { background: #1f2d3d; height: 24px; display: flex; align-items: center; padding: 0 12px; gap: 14px; flex-shrink: 0; border-top: 1px solid rgba(255,255,255,.07); }
+.status-lbl { font-size: 11px; color: #475569; display: flex; align-items: center; gap: 4px; }
+.status-lbl span { color: #94a3b8; font-weight: 600; }
+
+/* Notification */
+.notif-wrap { position: fixed; bottom: 36px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+.notif { background: #fff; color: #1e293b; padding: 9px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,.15); display: flex; align-items: center; gap: 7px; border-left: 3px solid #2563eb; animation: nSlide .2s ease; pointer-events: auto; border: 1px solid #e2e8f0; border-left-width: 3px; }
+@keyframes nSlide { from { opacity:0; transform: translateX(16px); } to { opacity:1; transform:none; } }
+
+/* Context menu */
+.ctx-menu { position: fixed; z-index: 99999; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.12); padding: 4px; min-width: 150px; display: none; }
+.ctx-menu.open { display: block; }
+.ctx-item { padding: 7px 12px; border-radius: 4px; font-size: 12px; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: background .1s; }
+.ctx-item:hover { background: #eff6ff; color: #1d4ed8; }
+.ctx-item.danger { color: #b91c1c; }
+.ctx-item.danger:hover { background: #fef2f2; }
+.ctx-sep { height: 1px; background: #e2e8f0; margin: 3px 0; }
+
+/* Form inputs in modal */
+.m-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; display: block; }
+.m-input { width: 100%; padding: 8px 10px; border: 1.5px solid #e2e8f0; border-radius: 6px; font-family: inherit; font-size: 13px; color: #1e293b; background: #fff; outline: none; }
+.m-input:focus { border-color: #2563eb; }
+.m-input::placeholder { color: #94a3b8; }
+
+/* Modals */
+.mod-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(3px); z-index: 99998; align-items: center; justify-content: center; }
+.mod-overlay.open { display: flex; }
+.mod-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; width: 440px; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+.mod-head { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #1f2d3d; border-radius: 12px 12px 0 0; }
+.mod-head h3 { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 7px; }
+.mod-head h3 i { color: #3b82f6; }
+.mod-close { width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(255,255,255,.1); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #cbd5e1; font-size: 13px; }
+.mod-close:hover { background: rgba(239,68,68,.3); color: #f87171; }
+.mod-body { padding: 18px 20px; }
+.mod-foot { padding: 12px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px; }
+.btn-pri { padding: 7px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .12s; }
+.btn-pri:hover { background: #1d4ed8; }
+.btn-sec { padding: 7px 12px; background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 6px; font-family: inherit; font-size: 13px; cursor: pointer; }
+.btn-sec:hover { background: #f1f5f9; color: #1e293b; }
+
+/* Toolbar title area */
+.tb-title-area { flex: 1; display: flex; justify-content: center; }
+
+/* Hide admin-only for non-editors */
+{% if session.get('rol') != 'editor' %}
+.admin-only { display: none !important; }
+{% endif %}
+</style>
+
+<h3 class="mb-3 fw-bold text-secondary">Süreç Yönetimi</h3>
+
+<!-- ── DIŞARIDAKİ KPI KARTLARI ── -->
+<div class="dis-kpi-wrap mb-3" id="dis-kpi-area">
+    <!-- JS ile doldurulacak -->
+</div>
+
+<div class="col-md-3">
+    <div class="doc-card shadow-sm">
+        <div class="doc-card-body">
+            <div style="width:48px;height:48px;border-radius:12px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;">
+                <i class="fa-solid fa-diagram-project"></i>
+            </div>
+            <div class="doc-card-title">Süreç Kütüphanesi</div>
+            <div class="doc-card-desc">İş süreçlerinizi BPMN notasyonuyla tasarlayın, kaydedin ve yönetin.</div>
+        </div>
+        <div class="doc-card-footer">
+            <button class="btn-doc" onclick="surecModalAc()">
+                <i class="fa-solid fa-arrow-right-circle"></i> Modülü Aç
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ FULLSCREEN MODAL ══════════════════════════════════════ -->
+<div class="modal fade" id="surecModal" tabindex="-1">
+  <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:0;">
+      <div class="modal-header" style="background:#1f2d3d;border-bottom:1px solid rgba(255,255,255,.08);">
+        <h5 class="modal-title text-white" style="font-size:15px;">
+          <i class="fa-solid fa-diagram-project me-2" style="color:#3b82f6;"></i>Süreç Yönetimi
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-0 h-100">
+        <div class="d-flex h-100">
+
+          <!-- SOL MENÜ -->
+          <div class="sur-sidebar">
+            <div class="sur-sidebar-title">Süreç Yönetimi</div>
+            <div class="sur-nav-item active" onclick="surecPanel('liste', this)" id="nav-liste">
+                <i class="fa-solid fa-list"></i> Tüm Süreçler
+                <span class="menu-badge" id="nav-badge">0</span>
+            </div>
+            <div class="sur-nav-item" onclick="surecPanel('mudürluk', this)" id="nav-mudürluk">
+                <i class="fa-solid fa-sitemap"></i> Müdürlük Bazlı
+            </div>
+            <div class="sur-nav-item" onclick="surecPanel('detay', this)" id="nav-detay">
+                <i class="fa-solid fa-circle-info"></i> Süreç Detayı
+            </div>
+            <div class="sur-nav-item admin-only" onclick="surecPanel('bpmn', this)" id="nav-bpmn">
+                <i class="fa-solid fa-pen-ruler"></i> BPMN Tasarımcısı
+            </div>
+          </div>
+
+          <!-- SAĞ İÇERİK -->
+          <div class="sur-main">
+
+            <!-- PANEL: Tüm Süreçler (ilk açılan) -->
+            <div id="panel-liste" class="sur-panel aktif">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex gap-2 align-items-center">
+                        <input class="form-control form-control-sm" placeholder="Süreç ara..." id="ara-input" style="width:200px;" oninput="listeFiltrele()">
+                        <select class="form-select form-select-sm" id="mudürlük-filtre" style="width:200px;" onchange="listeFiltrele()">
+                            <option value="">Tüm Müdürlükler</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-sm btn-primary admin-only" onclick="bpmnYeni()"><i class="fa-solid fa-plus me-1"></i>Yeni Süreç</button>
+                </div>
+                <div class="card-kys">
+                    <div class="ck-header"><i class="fa-solid fa-table text-primary"></i>Süreç Listesi</div>
+                    <div style="overflow-x:auto;">
+                        <table class="sur-table">
+                            <thead>
+                                <tr><th>#</th><th>Süreç Adı</th><th>Müdürlük</th><th>Versiyon</th><th>Eleman</th><th>Durum</th><th>İşlem</th></tr>
+                            </thead>
+                            <tbody id="liste-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Müdürlük Bazlı -->
+            <div id="panel-mudürluk" class="sur-panel">
+                <h6 class="fw-bold mb-3" style="color:#1e293b;"><i class="fa-solid fa-sitemap text-primary me-2"></i>Müdürlük Bazlı Süreçler</h6>
+                <div class="mudürlük-grid" id="mudürlük-bazli-grid"></div>
+            </div>
+
+            <!-- PANEL: Süreç Detay -->
+            <div id="panel-detay" class="sur-panel">
+                <div id="detay-icerik">
+                    <div class="text-center py-5" style="color:#94a3b8;">
+                        <i class="fa-regular fa-rectangle-list" style="font-size:2.5rem;opacity:.3;display:block;margin-bottom:12px;"></i>
+                        <p style="font-size:14px;font-weight:600;color:#64748b;">Detay görmek için bir süreç seçin</p>
+                        <p style="font-size:12px;">Süreç listesinden veya müdürlük görünümünden bir sürece tıklayın.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: BPMN Editör -->
+            <div id="panel-bpmn" class="sur-panel admin-only" style="height:calc(100vh - 120px);display:none;flex-direction:column;">
+                <div class="bpmn-wrap" id="bpmn-wrap">
+                    <!-- Toolbar -->
+                    <div class="bpmn-toolbar">
+                        <div class="bpmn-tbgroup">
+                            <button class="tb" title="Yeni" onclick="bpmnYeni()"><i class="fa-solid fa-file-plus"></i></button>
+                            <button class="tb" title="Kaydet" onclick="bpmnKaydet()"><i class="fa-solid fa-floppy-disk"></i></button>
+                            <button class="tb" title="JSON İndir" onclick="jsonIndir()"><i class="fa-solid fa-download"></i></button>
+                        </div>
+                        <div class="bpmn-tbgroup">
+                            <button class="tb" title="Geri Al (Ctrl+Z)" onclick="geriAl()"><i class="fa-solid fa-rotate-left"></i></button>
+                            <button class="tb" title="İleri Al" onclick="ileriAl()"><i class="fa-solid fa-rotate-right"></i></button>
+                            <button class="tb" title="Kopyala" onclick="kopyala()"><i class="fa-solid fa-copy"></i></button>
+                            <button class="tb" title="Yapıştır" onclick="yapistir()"><i class="fa-solid fa-paste"></i></button>
+                            <button class="tb red" title="Seçileni Sil" onclick="secilenSil()"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div class="bpmn-tbgroup">
+                            <button class="tb" title="Uzaklaş" onclick="zoomYap(-0.15)"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                            <span class="zoom-lbl" id="zoom-lbl">100%</span>
+                            <button class="tb" title="Yaklaş" onclick="zoomYap(0.15)"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                            <button class="tb" title="Sığdır" onclick="sigdir()"><i class="fa-solid fa-expand"></i></button>
+                        </div>
+                        <div class="bpmn-tbgroup">
+                            <button class="tb on" id="tb-sec" title="Seçici (V)" onclick="aracSec('secici')"><i class="fa-solid fa-arrow-pointer"></i></button>
+                            <button class="tb" id="tb-el" title="El (H)" onclick="aracSec('el')"><i class="fa-solid fa-hand"></i></button>
+                            <button class="tb" id="tb-conn" title="Bağlantı (C)" onclick="aracSec('conn')"><i class="fa-solid fa-arrow-right-long"></i></button>
+                        </div>
+                        <div class="tb-title-area">
+                            <input class="surec-adi-input" id="bpmn-adi" placeholder="Süreç adı..." value="Yeni Süreç">
+                        </div>
+                        <div class="bpmn-tbgroup">
+                            <button class="kaydet-btn" onclick="kaydetVeKutup()"><i class="fa-solid fa-floppy-disk"></i> Kaydet & Kütüphane</button>
+                            <button class="tb" title="Süreç Bilgileri" onclick="bilgiModalAc()"><i class="fa-solid fa-circle-info"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="bpmn-layout">
+                        <!-- Palette -->
+                        <div class="bpmn-palette">
+                            <div class="pal-section">Olaylar</div>
+                            <div class="pal-item" draggable="true" data-tip="start"><div class="pal-shape"><div class="ps-start"></div></div>Başlangıç</div>
+                            <div class="pal-item" draggable="true" data-tip="end"><div class="pal-shape"><div class="ps-end"></div></div>Bitiş</div>
+                            <div class="pal-item" draggable="true" data-tip="mid"><div class="pal-shape"><div class="ps-ara"></div></div>Ara Olay</div>
+                            <div class="pal-section">Görevler</div>
+                            <div class="pal-item" draggable="true" data-tip="task"><div class="pal-shape"><div class="ps-task"></div></div>Görev</div>
+                            <div class="pal-item" draggable="true" data-tip="user"><div class="pal-shape"><div class="ps-user"></div></div>Kullanıcı</div>
+                            <div class="pal-item" draggable="true" data-tip="send"><div class="pal-shape"><div class="ps-send"></div></div>Gönder</div>
+                            <div class="pal-item" draggable="true" data-tip="recv"><div class="pal-shape"><div class="ps-recv"></div></div>Al</div>
+                            <div class="pal-section">Ağ Geçidi</div>
+                            <div class="pal-item" draggable="true" data-tip="gw"><div class="pal-shape"><div class="ps-gw"></div></div>Özel</div>
+                            <div class="pal-item" draggable="true" data-tip="pgw"><div class="pal-shape"><div class="ps-pgw"></div></div>Paralel</div>
+                            <div class="pal-section">Notlar</div>
+                            <div class="pal-item" draggable="true" data-tip="note"><div class="pal-shape"><div class="ps-note"></div></div>Not</div>
+                        </div>
+
+                        <!-- Canvas -->
+                        <div class="bpmn-canvas-wrap" id="canvas-wrap" ondragover="event.preventDefault()" ondrop="elmanDusur(event)">
+                            <div id="bpmn-canvas">
+                                <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                        <marker id="ok" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                                            <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+                                        </marker>
+                                        <marker id="ok-blue" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                                            <path d="M0,0 L0,6 L8,3 z" fill="#2563eb"/>
+                                        </marker>
+                                        <marker id="ok-purple" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                                            <path d="M0,0 L0,6 L8,3 z" fill="#a78bfa"/>
+                                        </marker>
+                                    </defs>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Properties Panel -->
+                        <div class="bpmn-props">
+                            <div class="props-header"><i class="fa-solid fa-sliders"></i>Özellikler</div>
+                            <div id="props-icerik">
+                                <div class="props-empty">
+                                    <i class="fa-regular fa-hand-pointer"></i>
+                                    <p>Düzenlemek için bir eleman seçin</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status bar -->
+                    <div class="bpmn-status">
+                        <div class="status-lbl"><i class="fa-solid fa-shapes"></i>Eleman: <span id="st-el">0</span></div>
+                        <div class="status-lbl"><i class="fa-solid fa-arrow-right-long"></i>Bağlantı: <span id="st-conn">0</span></div>
+                        <div class="status-lbl"><i class="fa-solid fa-location-dot"></i>Konum: <span id="st-pos">0, 0</span></div>
+                        <div class="status-lbl" style="margin-left:auto;"><i class="fa-regular fa-clock"></i>Son kayıt: <span id="st-time">—</span></div>
+                    </div>
+                </div>
+            </div>
+
+          </div><!-- /sur-main -->
+        </div><!-- /d-flex -->
+      </div><!-- /modal-body -->
+    </div>
+  </div>
+</div>
+
+<!-- Süreç Bilgi Modal -->
+<div class="mod-overlay" id="bilgi-modal">
+    <div class="mod-box">
+        <div class="mod-head">
+            <h3><i class="fa-solid fa-circle-info"></i>Süreç Bilgileri</h3>
+            <button class="mod-close" onclick="modKapat('bilgi-modal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="mod-body">
+            <div class="row g-2">
+                <div class="col-12"><label class="m-label">Süreç Adı</label><input class="m-input" id="sb-ad" placeholder="Süreç adı..."></div>
+                <div class="col-12"><label class="m-label">Müdürlük</label><input class="m-input" id="sb-mudürlük" placeholder="ör. Üye İşleri Müdürlüğü"></div>
+                <div class="col-12"><label class="m-label">Açıklama</label><textarea class="m-input" id="sb-aciklama" rows="3" placeholder="Açıklama..."></textarea></div>
+                <div class="col-6"><label class="m-label">Girdiler (virgülle)</label><input class="m-input" id="sb-girdiler" placeholder="Başvuru Formu, Kimlik..."></div>
+                <div class="col-6"><label class="m-label">Çıktılar (virgülle)</label><input class="m-input" id="sb-ciktilar" placeholder="Onay Belgesi, Kayıt No..."></div>
+                <div class="col-6"><label class="m-label">Versiyon</label><input class="m-input" id="sb-versiyon" value="1.0"></div>
+                <div class="col-6"><label class="m-label">Durum</label>
+                    <select class="m-input" id="sb-durum">
+                        <option>Aktif</option><option>Taslak</option><option>Arşiv</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="mod-foot">
+            <button class="btn-sec" onclick="modKapat('bilgi-modal')">İptal</button>
+            <button class="btn-pri" onclick="bilgiKaydet()"><i class="fa-solid fa-check me-1"></i>Kaydet</button>
+        </div>
+    </div>
+</div>
+
+<!-- Şema Önizleme Lightbox -->
+<div class="preview-lightbox" id="preview-lightbox">
+    <div class="preview-lb-inner">
+        <div class="preview-lb-head">
+            <h4><i class="fa-solid fa-diagram-project"></i><span id="lb-baslik">Süreç Şeması</span></h4>
+            <button class="preview-lb-close" onclick="lbKapat()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="preview-lb-body">
+            <svg class="preview-lb-svg" id="preview-lb-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="preview-lb-foot">
+            <button class="btn-preview-edit" id="lb-duzenle-btn" onclick="lbTasarimciAc()">
+                <i class="fa-solid fa-pen-ruler"></i> Tasarımcıda Düzenle
+            </button>
+            <button class="btn-preview-zoom" onclick="lbKapat()">
+                <i class="fa-solid fa-xmark"></i> Kapat
+            </button>
+            <span style="margin-left:auto;font-size:11px;color:#94a3b8;" id="lb-istatistik"></span>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div class="ctx-menu" id="ctx-menu">
+    <div class="ctx-item" onclick="ctxDuzenle()"><i class="fa-solid fa-pen"></i>Düzenle</div>
+    <div class="ctx-item" onclick="ctxKopyala()"><i class="fa-solid fa-copy"></i>Kopyala</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item danger" onclick="ctxSil()"><i class="fa-solid fa-trash"></i>Sil</div>
+</div>
+
+<div class="notif-wrap" id="notif-wrap"></div>
+<input type="file" id="json-file" accept=".json" style="display:none" onchange="jsonYukle(event)">
+
+<script>
+const IS_EDITOR = {{ 'true' if session.get('rol') == 'editor' else 'false' }};
+
+/* ═══════════════════════════════════════════════════════
+   ÖRNEK VERİLER + SERVER DATA
+═══════════════════════════════════════════════════════ */
+const SUNUCU_SURECLER = {{ surecler | tojson | safe }};
+
+const ORNEK_SURECLER = [
+  {
+    meta: { kimlik:'P-001', ad:'Üye Kayıt Süreci', mudürlük:'Üye Hizmetleri Müdürlüğü', aciklama:'Yeni üye kayıt başvurularının alınması ve sisteme işlenmesi süreci.', girdiler:'Başvuru Formu, Kimlik Fotokopisi', ciktilar:'Üye Kartı, Kayıt No', iliskili:'Ödeme Süreci, Tescil Süreci', versiyon:'2.1', durum:'Aktif' },
+    eleman_sayisi: 7, baglanti_sayisi: 6,
+    elemanlar: [
+      {id:'e1',tip:'start',x:60,y:120,w:36,h:36,etiket:'Başlangıç',aciklama:'',numa:'',renk:null},
+      {id:'e2',tip:'task',x:140,y:105,w:110,h:56,etiket:'Başvuru Al',aciklama:'Üye başvurusunu al',numa:'1.1',renk:null},
+      {id:'e3',tip:'gw',x:300,y:99,w:46,h:46,etiket:'Tam mı?',aciklama:'Eksik bilgi kontrolü',numa:'',renk:null},
+      {id:'e4',tip:'task',x:390,y:105,w:110,h:56,etiket:'Sisteme İşle',aciklama:'Üye bilgilerini kayıt et',numa:'1.2',renk:null},
+      {id:'e5',tip:'task',x:300,y:210,w:110,h:56,etiket:'Eksik Talep',aciklama:'Eksik belge talep et',numa:'1.3',renk:null},
+      {id:'e6',tip:'task',x:540,y:105,w:110,h:56,etiket:'Kart Oluştur',aciklama:'Üye kartı bas ve teslim et',numa:'1.4',renk:null},
+      {id:'e7',tip:'end',x:700,y:120,w:36,h:36,etiket:'Bitiş',aciklama:'',numa:'',renk:null}
+    ],
+    baglantilar: [
+      {id:'c1',kaynak:'e1',hedef:'e2',tip:'seq',etiket:''},
+      {id:'c2',kaynak:'e2',hedef:'e3',tip:'seq',etiket:''},
+      {id:'c3',kaynak:'e3',hedef:'e4',tip:'seq',etiket:'Evet'},
+      {id:'c4',kaynak:'e3',hedef:'e5',tip:'seq',etiket:'Hayır'},
+      {id:'c5',kaynak:'e5',hedef:'e2',tip:'seq',etiket:'Düzeltme'},
+      {id:'c6',kaynak:'e4',hedef:'e6',tip:'seq',etiket:''},
+      {id:'c7',kaynak:'e6',hedef:'e7',tip:'seq',etiket:''}
+    ]
+  },
+  {
+    meta: { kimlik:'P-002', ad:'İç Denetim Planlama', mudürlük:'Kalite Müdürlüğü', aciklama:'Yıllık iç denetim programının hazırlanması ve onaylanması süreci.', girdiler:'Önceki Denetim Raporları, Kalite Hedefleri', ciktilar:'Denetim Programı, Görevlendirme Yazısı', iliskili:'Bulgu Yönetimi Süreci', versiyon:'1.3', durum:'Aktif' },
+    eleman_sayisi: 6, baglanti_sayisi: 5,
+    elemanlar: [
+      {id:'e1',tip:'start',x:60,y:120,w:36,h:36,etiket:'Başlangıç',aciklama:'',numa:'',renk:null},
+      {id:'e2',tip:'task',x:140,y:105,w:120,h:56,etiket:'Kapsam Belirle',aciklama:'Denetlenecek birimleri belirle',numa:'2.1',renk:null},
+      {id:'e3',tip:'task',x:310,y:105,w:120,h:56,etiket:'Program Hazırla',aciklama:'Takvim ve denetçileri ata',numa:'2.2',renk:null},
+      {id:'e4',tip:'user',x:480,y:105,w:120,h:56,etiket:'Yönetim Onayla',aciklama:'Üst yönetim onayı al',numa:'2.3',renk:null},
+      {id:'e5',tip:'send',x:650,y:105,w:120,h:56,etiket:'Bildir',aciklama:'Birimlere denetim bildir',numa:'2.4',renk:null},
+      {id:'e6',tip:'end',x:830,y:120,w:36,h:36,etiket:'Bitiş',aciklama:'',numa:'',renk:null}
+    ],
+    baglantilar: [
+      {id:'c1',kaynak:'e1',hedef:'e2',tip:'seq',etiket:''},
+      {id:'c2',kaynak:'e2',hedef:'e3',tip:'seq',etiket:''},
+      {id:'c3',kaynak:'e3',hedef:'e4',tip:'seq',etiket:''},
+      {id:'c4',kaynak:'e4',hedef:'e5',tip:'seq',etiket:''},
+      {id:'c5',kaynak:'e5',hedef:'e6',tip:'seq',etiket:''}
+    ]
+  },
+  {
+    meta: { kimlik:'P-003', ad:'Satın Alma Süreci', mudürlük:'Mali İşler Müdürlüğü', aciklama:'Mal ve hizmet alımlarının talep, onay ve tedarik sürecinin yönetimi.', girdiler:'Talep Formu, Bütçe Onayı', ciktilar:'Sözleşme, Fatura, Ödeme Emri', iliskili:'Bütçe Planlama Süreci', versiyon:'1.5', durum:'Aktif' },
+    eleman_sayisi: 8, baglanti_sayisi: 8,
+    elemanlar: [
+      {id:'e1',tip:'start',x:40,y:130,w:36,h:36,etiket:'Başlangıç',aciklama:'',numa:'',renk:null},
+      {id:'e2',tip:'task',x:120,y:115,w:110,h:56,etiket:'Talep Oluştur',aciklama:'Satın alma talebi yaz',numa:'3.1',renk:null},
+      {id:'e3',tip:'gw',x:280,y:109,w:46,h:46,etiket:'Tutar?',aciklama:'Limit kontrolü',numa:'',renk:null},
+      {id:'e4',tip:'user',x:370,y:115,w:110,h:56,etiket:'Md. Onayla',aciklama:'Müdür onayı',numa:'3.2',renk:null},
+      {id:'e5',tip:'user',x:530,y:115,w:110,h:56,etiket:'GM Onayla',aciklama:'Genel müdür onayı',numa:'3.3',renk:null},
+      {id:'e6',tip:'task',x:690,y:115,w:110,h:56,etiket:'Sipariş Ver',aciklama:'Tedarikçiye sipariş gönder',numa:'3.4',renk:null},
+      {id:'e7',tip:'task',x:280,y:220,w:110,h:56,etiket:'Ret Bildir',aciklama:'Talebi ret bildir',numa:'3.5',renk:null},
+      {id:'e8',tip:'end',x:850,y:130,w:36,h:36,etiket:'Bitiş',aciklama:'',numa:'',renk:null}
+    ],
+    baglantilar: [
+      {id:'c1',kaynak:'e1',hedef:'e2',tip:'seq',etiket:''},
+      {id:'c2',kaynak:'e2',hedef:'e3',tip:'seq',etiket:''},
+      {id:'c3',kaynak:'e3',hedef:'e4',tip:'seq',etiket:'≤50K'},
+      {id:'c4',kaynak:'e3',hedef:'e5',tip:'seq',etiket:'>50K'},
+      {id:'c5',kaynak:'e3',hedef:'e7',tip:'seq',etiket:'Red'},
+      {id:'c6',kaynak:'e4',hedef:'e6',tip:'seq',etiket:''},
+      {id:'c7',kaynak:'e5',hedef:'e6',tip:'seq',etiket:''},
+      {id:'c8',kaynak:'e6',hedef:'e8',tip:'seq',etiket:''}
+    ]
+  },
+  {
+    meta: { kimlik:'P-004', ad:'Doküman Yönetimi', mudürlük:'Kalite Müdürlüğü', aciklama:'KYS dokümanlarının hazırlanması, onaylanması ve dağıtımı süreci.', girdiler:'Taslak Doküman, Revizyon Talebi', ciktilar:'Onaylı Doküman, Dağıtım Listesi', iliskili:'İç Denetim Planlama Süreci', versiyon:'1.0', durum:'Taslak' },
+    eleman_sayisi: 5, baglanti_sayisi: 4,
+    elemanlar: [
+      {id:'e1',tip:'start',x:60,y:120,w:36,h:36,etiket:'Başlangıç',aciklama:'',numa:'',renk:null},
+      {id:'e2',tip:'task',x:140,y:105,w:110,h:56,etiket:'Taslak Hazırla',aciklama:'Doküman taslağını yaz',numa:'4.1',renk:null},
+      {id:'e3',tip:'user',x:300,y:105,w:110,h:56,etiket:'Gözden Geçir',aciklama:'Revizyon önerileri al',numa:'4.2',renk:null},
+      {id:'e4',tip:'user',x:460,y:105,w:110,h:56,etiket:'Onayla',aciklama:'Yönetim onayı al',numa:'4.3',renk:null},
+      {id:'e5',tip:'end',x:620,y:120,w:36,h:36,etiket:'Bitiş',aciklama:'',numa:'',renk:null}
+    ],
+    baglantilar: [
+      {id:'c1',kaynak:'e1',hedef:'e2',tip:'seq',etiket:''},
+      {id:'c2',kaynak:'e2',hedef:'e3',tip:'seq',etiket:''},
+      {id:'c3',kaynak:'e3',hedef:'e4',tip:'seq',etiket:''},
+      {id:'c4',kaynak:'e4',hedef:'e5',tip:'seq',etiket:''}
+    ]
+  },
+  {
+    meta: { kimlik:'P-005', ad:'Personel Eğitim Süreci', mudürlük:'İnsan Kaynakları Müdürlüğü', aciklama:'Çalışan eğitim ihtiyaçlarının tespiti, planlanması ve etkinlik değerlendirmesi.', girdiler:'Eğitim İhtiyaç Analizi, Bütçe', ciktilar:'Eğitim Raporu, Katılım Belgesi', iliskili:'İşe Alım Süreci', versiyon:'1.2', durum:'Aktif' },
+    eleman_sayisi: 6, baglanti_sayisi: 5,
+    elemanlar: [
+      {id:'e1',tip:'start',x:60,y:120,w:36,h:36,etiket:'Başlangıç',aciklama:'',numa:'',renk:null},
+      {id:'e2',tip:'task',x:140,y:105,w:120,h:56,etiket:'İhtiyaç Tespit',aciklama:'Yıllık eğitim ihtiyacı analizi',numa:'5.1',renk:null},
+      {id:'e3',tip:'task',x:310,y:105,w:120,h:56,etiket:'Plan Hazırla',aciklama:'Eğitim takvimi oluştur',numa:'5.2',renk:null},
+      {id:'e4',tip:'task',x:480,y:105,w:120,h:56,etiket:'Eğitimi Ver',aciklama:'Eğitimi gerçekleştir',numa:'5.3',renk:null},
+      {id:'e5',tip:'task',x:650,y:105,w:120,h:56,etiket:'Etkinlik Ölç',aciklama:'Anket ve değerlendirme yap',numa:'5.4',renk:null},
+      {id:'e6',tip:'end',x:830,y:120,w:36,h:36,etiket:'Bitiş',aciklama:'',numa:'',renk:null}
+    ],
+    baglantilar: [
+      {id:'c1',kaynak:'e1',hedef:'e2',tip:'seq',etiket:''},
+      {id:'c2',kaynak:'e2',hedef:'e3',tip:'seq',etiket:''},
+      {id:'c3',kaynak:'e3',hedef:'e4',tip:'seq',etiket:''},
+      {id:'c4',kaynak:'e4',hedef:'e5',tip:'seq',etiket:''},
+      {id:'c5',kaynak:'e5',hedef:'e6',tip:'seq',etiket:''}
+    ]
+  }
+];
+
+let surecListesi = [];
+if (SUNUCU_SURECLER.length > 0) {
+  surecListesi = SUNUCU_SURECLER.map(s => ({
+    meta: s.meta, elemanlar: [], baglantilar: [],
+    eleman_sayisi: s.eleman_sayisi || 0, baglanti_sayisi: s.baglanti_sayisi || 0
+  }));
+} else {
+  surecListesi = ORNEK_SURECLER;
+}
+
+/* ═══════════════════════════════════════════════════════
+   DIŞARIDAKİ KPI GÜNCELLE (sayfa yüklenince)
+═══════════════════════════════════════════════════════ */
+function disKpiGuncelle() {
+    const aktif    = surecListesi.filter(s => s.meta?.durum === 'Aktif').length;
+    const taslak   = surecListesi.filter(s => s.meta?.durum === 'Taslak').length;
+    const mudurler = [...new Set(surecListesi.map(s => s.meta?.mudürlük || '').filter(Boolean))];
+    document.getElementById('dis-kpi-area').innerHTML = `
+        <div class="dis-kpi-card"><div class="dis-kpi-num" style="color:#2563eb">${surecListesi.length}</div><div class="dis-kpi-lbl">Toplam Süreç</div></div>
+        <div class="dis-kpi-card"><div class="dis-kpi-num" style="color:#16a34a">${aktif}</div><div class="dis-kpi-lbl">Aktif</div></div>
+        <div class="dis-kpi-card"><div class="dis-kpi-num" style="color:#d97706">${taslak}</div><div class="dis-kpi-lbl">Taslak</div></div>
+        <div class="dis-kpi-card"><div class="dis-kpi-num" style="color:#7c3aed">${mudurler.length}</div><div class="dis-kpi-lbl">Müdürlük</div></div>
+    `;
+}
+disKpiGuncelle();
+
+/* ═══════════════════════════════════════════════════════
+   PANEL YÖNETİMİ
+═══════════════════════════════════════════════════════ */
+let aktifPanel = 'liste';
+function surecPanel(id, navEl) {
+    document.querySelectorAll('.sur-panel').forEach(p => { p.classList.remove('aktif'); p.style.display = ''; });
+    document.querySelectorAll('.sur-nav-item').forEach(n => n.classList.remove('active'));
+    const panel = document.getElementById('panel-' + id);
+    if (panel) {
+        if (id === 'bpmn') { panel.style.display = 'flex'; }
+        else { panel.classList.add('aktif'); }
+    }
+    if (navEl) navEl.classList.add('active');
+    aktifPanel = id;
+    if (id === 'liste')    listeYenile();
+    if (id === 'mudürluk') mudürlükYenile();
+}
+
+function surecModalAc() {
+    const modal = new bootstrap.Modal(document.getElementById('surecModal'));
+    modal.show();
+    setTimeout(() => { listeYenile(); }, 100);
+}
+
+/* ═══════════════════════════════════════════════════════
+   LİSTE
+═══════════════════════════════════════════════════════ */
+function listeYenile() {
+    document.getElementById('nav-badge').textContent = surecListesi.length;
+    const mudürlükler = [...new Set(surecListesi.map(s => s.meta?.mudürlük || '').filter(Boolean))];
+    const sel = document.getElementById('mudürlük-filtre');
+    const secili = sel.value;
+    sel.innerHTML = '<option value="">Tüm Müdürlükler</option>' + mudürlükler.map(m => `<option value="${m}"${m===secili?' selected':''}>${m}</option>`).join('');
+    listeFiltrele();
+}
+
+function listeFiltrele() {
+    const ara = (document.getElementById('ara-input').value || '').toLowerCase();
+    const mud = document.getElementById('mudürlük-filtre').value;
+    const filt = surecListesi.filter(s => (!ara || (s.meta?.ad || '').toLowerCase().includes(ara)) && (!mud || s.meta?.mudürlük === mud));
+    const tbody = document.getElementById('liste-tbody');
+    if (!filt.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:28px;color:#94a3b8;">Süreç bulunamadı.</td></tr>`; return; }
+    tbody.innerHTML = filt.map((s, i) => {
+        const dur = s.meta?.durum || 'Aktif';
+        const badge = dur === 'Aktif' ? 'badge-aktif' : dur === 'Taslak' ? 'badge-taslak' : 'badge-arsiv';
+        const editBtns = IS_EDITOR ? `<button class="btn-aksiyon btn-duzenle" onclick="surecDuzenle('${s.meta.kimlik}')"><i class="fa-solid fa-pen"></i> Düzenle</button><button class="btn-aksiyon btn-sil" onclick="surecSil('${s.meta.kimlik}')"><i class="fa-solid fa-trash"></i></button>` : '';
+        return `<tr>
+            <td style="color:#94a3b8;font-weight:600;">${i+1}</td>
+            <td><span style="font-weight:600;color:#1e293b;cursor:pointer;" onclick="detayGoster('${s.meta.kimlik}')">${s.meta?.ad || '—'}</span></td>
+            <td>${s.meta?.mudürlük || '—'}</td>
+            <td>v${s.meta?.versiyon || '1.0'}</td>
+            <td>${s.eleman_sayisi || 0}</td>
+            <td><span class="${badge}">${dur}</span></td>
+            <td><div class="d-flex gap-1">
+                <button class="btn-aksiyon btn-detay" onclick="detayGoster('${s.meta.kimlik}')"><i class="fa-solid fa-eye"></i> Detay</button>
+                ${editBtns}
+            </div></td>
+        </tr>`;
+    }).join('');
+}
+
+function mudürlükYenile() {
+    const gruplar = {};
+    surecListesi.forEach(s => { const m = s.meta?.mudürlük || 'Diğer'; if (!gruplar[m]) gruplar[m] = []; gruplar[m].push(s); });
+    const container = document.getElementById('mudürlük-bazli-grid');
+    if (!container) return;
+    if (!surecListesi.length) { container.innerHTML = '<p style="color:#94a3b8;font-size:13px;">Henüz süreç yok.</p>'; return; }
+    container.innerHTML = Object.entries(gruplar).map(([m, list]) => `
+        <div class="mudürlük-kart">
+            <div class="mk-baslik"><i class="fa-solid fa-building me-1"></i>${m} <span style="margin-left:auto;font-weight:400;color:#64748b;font-size:10px;">${list.length} süreç</span></div>
+            <div class="mk-liste">
+                ${list.map(s => {
+                    const dur = (s.meta.durum || 'aktif').toLowerCase();
+                    const durCls = dur === 'aktif' ? 'aktif' : dur === 'taslak' ? 'taslak' : 'arsiv';
+                    return `<div class="mk-surec" onclick="detayGoster('${s.meta.kimlik}')">
+                        <div class="mk-dot ${durCls}"></div>
+                        <span style="flex:1;">${s.meta.ad}</span>
+                        <span style="font-size:10px;color:#94a3b8;font-weight:600;">v${s.meta.versiyon || '1.0'}</span>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>
+    `).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   ŞEMA ÖNİZLEME — mini SVG render (scale-fit)
+═══════════════════════════════════════════════════════ */
+function buildPreviewSVG(elemanlar, baglantilar, W, H) {
+    if (!elemanlar || !elemanlar.length) return '<text x="50%" y="50%" text-anchor="middle" font-size="12" fill="#94a3b8">Şema verisi yok</text>';
+
+    // Bounding box hesapla
+    const xs = elemanlar.map(e => e.x), ys = elemanlar.map(e => e.y);
+    const maxX = Math.max(...elemanlar.map(e => e.x + e.w));
+    const maxY = Math.max(...elemanlar.map(e => e.y + e.h));
+    const minX = Math.min(...xs), minY = Math.min(...ys);
+    const cw = maxX - minX + 40, ch = maxY - minY + 60;
+    const scale = Math.min((W - 20) / cw, (H - 20) / ch, 1.2);
+    const offX = (W - cw * scale) / 2 - minX * scale + 10;
+    const offY = (H - ch * scale) / 2 - minY * scale + 10;
+
+    const T = (x, y) => [x * scale + offX, y * scale + offY];
+
+    let parts = [];
+
+    // Defs (ok ucu)
+    parts.push(`<defs>
+        <marker id="pok" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#94a3b8"/>
+        </marker>
+        <marker id="pok-msg" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#a78bfa"/>
+        </marker>
+    </defs>`);
+
+    // Bağlantılar
+    (baglantilar || []).forEach(bag => {
+        const k = elemanlar.find(e => e.id === bag.kaynak);
+        const h = elemanlar.find(e => e.id === bag.hedef);
+        if (!k || !h) return;
+        const km = [k.x + k.w/2, k.y + k.h/2];
+        const hm = [h.x + h.w/2, h.y + h.h/2];
+        const [kx, ky] = miniCikis(k, hm[0], hm[1]);
+        const [hx, hy] = miniGiris(h, km[0], km[1]);
+        const [tkx, tky] = T(kx, ky);
+        const [thx, thy] = T(hx, hy);
+        const dx = thx - tkx, dy = thy - tky;
+        const isMsg = bag.tip === 'msg';
+        parts.push(`<path d="M${tkx} ${tky} C${tkx+dx*.5} ${tky},${tkx+dx*.5} ${thy},${thx} ${thy}"
+            stroke="${isMsg?'#a78bfa':'#94a3b8'}" stroke-width="1.5" fill="none"
+            ${isMsg?'stroke-dasharray="4,2"':''} marker-end="url(#${isMsg?'pok-msg':'pok'})"/>`);
+        if (bag.etiket) {
+            const [lx, ly] = T((kx+hx)/2, (ky+hy)/2 - 5);
+            parts.push(`<text x="${lx}" y="${ly}" text-anchor="middle" font-size="${Math.max(8,10*scale)}" fill="#64748b">${bag.etiket}</text>`);
+        }
+    });
+
+    // Elemanlar
+    elemanlar.forEach(el => {
+        const [ex, ey] = T(el.x, el.y);
+        const ew = el.w * scale, eh = el.h * scale;
+        const cx = ex + ew/2, cy = ey + eh/2;
+        const fs = Math.max(7, 10 * scale);
+
+        if (el.tip === 'start') {
+            parts.push(`<circle cx="${cx}" cy="${cy}" r="${18*scale}" fill="rgba(34,197,94,.15)" stroke="#22c55e" stroke-width="1.5"/>`);
+        } else if (el.tip === 'end') {
+            parts.push(`<circle cx="${cx}" cy="${cy}" r="${18*scale}" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="2.5"/>`);
+        } else if (el.tip === 'mid') {
+            parts.push(`<circle cx="${cx}" cy="${cy}" r="${18*scale}" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="1.5"/>`);
+            parts.push(`<circle cx="${cx}" cy="${cy}" r="${12*scale}" fill="none" stroke="#f59e0b" stroke-width="1"/>`);
+        } else if (['task','user','send','recv'].includes(el.tip)) {
+            const brd = el.tip==='user'?'#a78bfa':el.tip==='send'?'#34d399':el.tip==='recv'?'#f87171':'#60a5fa';
+            const bg  = el.tip==='user'?'rgba(167,139,250,.08)':el.tip==='send'?'rgba(52,211,153,.08)':el.tip==='recv'?'rgba(248,113,113,.08)':'#fff';
+            parts.push(`<rect x="${ex}" y="${ey}" width="${ew}" height="${eh}" rx="${4*scale}" fill="${bg}" stroke="${brd}" stroke-width="1.3"/>`);
+            const lines = wrapText(el.etiket, Math.max(60, ew / fs * 5));
+            const lineH = fs * 1.3;
+            const startY = cy - (lines.length - 1) * lineH / 2;
+            lines.forEach((ln, i) => {
+                parts.push(`<text x="${cx}" y="${startY + i * lineH}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}" font-weight="600" fill="#1e293b" font-family="inherit">${escSvg(ln)}</text>`);
+            });
+        } else if (['gw','pgw'].includes(el.tip)) {
+            const brd = el.tip==='pgw'?'#60a5fa':'#fde047';
+            const bg  = el.tip==='pgw'?'rgba(96,165,250,.1)':'rgba(253,224,71,.1)';
+            const hw = ew/2, hh = eh/2;
+            parts.push(`<polygon points="${cx},${ey} ${ex+ew},${cy} ${cx},${ey+eh} ${ex},${cy}" fill="${bg}" stroke="${brd}" stroke-width="1.3"/>`);
+            const sym = el.tip==='pgw'?'+':'×';
+            parts.push(`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="${fs+2}" font-weight="800" fill="#94a3b8">${sym}</text>`);
+        } else if (el.tip === 'note') {
+            parts.push(`<rect x="${ex}" y="${ey}" width="${ew}" height="${eh}" rx="2" fill="rgba(253,224,71,.1)" stroke="#d97706" stroke-width="1" stroke-dasharray="4,2"/>`);
+            parts.push(`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}" fill="#475569">${escSvg(el.etiket.substring(0,20))}</text>`);
+        }
+
+        // Label (olaylar için)
+        if (['start','end','mid'].includes(el.tip) && el.etiket) {
+            const [lx, ly] = T(el.x + el.w/2, el.y + el.h + 4);
+            parts.push(`<text x="${lx}" y="${ly + fs}" text-anchor="middle" font-size="${Math.max(6,fs*.85)}" fill="#475569">${escSvg(el.etiket)}</text>`);
+        }
+    });
+
+    return parts.join('\n');
+}
+
+function miniCikis(el, hx, hy) {
+    const cx = el.x + el.w/2, cy = el.y + el.h/2;
+    const dx = hx - cx, dy = hy - cy;
+    if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? [el.x+el.w, cy] : [el.x, cy];
+    return dy > 0 ? [cx, el.y+el.h] : [cx, el.y];
+}
+function miniGiris(el, kx, ky) {
+    const cx = el.x + el.w/2, cy = el.y + el.h/2;
+    const dx = kx - cx, dy = ky - cy;
+    if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? [el.x, cy] : [el.x+el.w, cy];
+    return dy > 0 ? [cx, el.y] : [cx, el.y+el.h];
+}
+function escSvg(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function wrapText(text, maxChars) {
+    if (!text) return [''];
+    const words = text.split(' ');
+    const lines = []; let cur = '';
+    words.forEach(w => { if ((cur + ' ' + w).trim().length > maxChars) { if (cur) lines.push(cur); cur = w; } else cur = (cur + ' ' + w).trim(); });
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [text];
+}
+
+/* ═══════════════════════════════════════════════════════
+   LIGHTBOX (büyük önizleme)
+═══════════════════════════════════════════════════════ */
+let lbKimlik = null;
+function lbAc(kimlik) {
+    const s = surecListesi.find(x => x.meta?.kimlik === kimlik);
+    if (!s) return;
+    lbKimlik = kimlik;
+    document.getElementById('lb-baslik').textContent = s.meta.ad;
+    document.getElementById('lb-istatistik').textContent = `${s.eleman_sayisi||0} eleman · ${s.baglanti_sayisi||0} bağlantı`;
+    const svg = document.getElementById('preview-lb-svg');
+    const lb = document.getElementById('preview-lightbox');
+    lb.classList.add('open');
+    // Büyük viewport için render
+    setTimeout(() => {
+        const W = svg.clientWidth || 900, H = svg.clientHeight || 500;
+        svg.innerHTML = buildPreviewSVG(s.elemanlar || [], s.baglantilar || [], W, H);
+    }, 50);
+    if (!IS_EDITOR) document.getElementById('lb-duzenle-btn').style.display = 'none';
+}
+function lbKapat() { document.getElementById('preview-lightbox').classList.remove('open'); }
+function lbTasarimciAc() { lbKapat(); if (lbKimlik) surecDuzenle(lbKimlik); }
+document.getElementById('preview-lightbox').addEventListener('click', e => { if (e.target === e.currentTarget) lbKapat(); });
+
+/* ═══════════════════════════════════════════════════════
+   DETAY
+═══════════════════════════════════════════════════════ */
+async function detayGoster(kimlik) {
+    let s = surecListesi.find(x => x.meta?.kimlik === kimlik);
+    if (!s) return;
+
+    // Elemanlar yoksa API'den çek
+    if ((!s.elemanlar || !s.elemanlar.length) && SUNUCU_SURECLER.length > 0) {
+        try {
+            const r = await fetch('/surec/api/detay/' + kimlik);
+            const detay = await r.json();
+            s = Object.assign({}, s, { elemanlar: detay.elemanlar || [], baglantilar: detay.baglantilar || [] });
+            // listede güncelle
+            const idx = surecListesi.findIndex(x => x.meta?.kimlik === kimlik);
+            if (idx >= 0) surecListesi[idx] = { ...surecListesi[idx], elemanlar: s.elemanlar, baglantilar: s.baglantilar };
+        } catch(e) {}
+    }
+
+    surecPanel('detay', document.getElementById('nav-detay'));
+    const dur = s.meta.durum || 'Aktif';
+    const badge = dur === 'Aktif' ? 'badge-aktif' : dur === 'Taslak' ? 'badge-taslak' : 'badge-arsiv';
+    const girdiler = (s.meta.girdiler || '').split(',').filter(Boolean);
+    const ciktilar = (s.meta.ciktilar || '').split(',').filter(Boolean);
+    const iliskili = (s.meta.iliskili || '').split(',').filter(Boolean);
+    const editBtn = IS_EDITOR ? `<button class="btn-aksiyon btn-duzenle" onclick="surecDuzenle('${kimlik}')"><i class="fa-solid fa-pen me-1"></i>Düzenle</button>` : '';
+
+    document.getElementById('detay-icerik').innerHTML = `
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div style="width:48px;height:48px;border-radius:12px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid #bfdbfe;">
+                <i class="fa-solid fa-diagram-project"></i>
+            </div>
+            <div style="flex:1;">
+                <h5 style="margin:0;color:#1e293b;font-size:16px;">${s.meta.ad}</h5>
+                <p style="margin:0;font-size:12px;color:#64748b;">${s.meta.mudürlük || '—'} · <span class="${badge}">${dur}</span></p>
+            </div>
+            <div>${editBtn}</div>
+        </div>
+        <div class="detay-grid">
+            <div class="detay-bilgi">
+                <div class="dbk-baslik"><i class="fa-solid fa-circle-info"></i>Genel Bilgiler</div>
+                <div class="dbk-satir"><span class="dbk-etiket">Adı</span><span class="dbk-deger">${s.meta.ad}</span></div>
+                <div class="dbk-satir"><span class="dbk-etiket">Müdürlük</span><span class="dbk-deger">${s.meta.mudürlük || '—'}</span></div>
+                <div class="dbk-satir"><span class="dbk-etiket">Versiyon</span><span class="dbk-deger">v${s.meta.versiyon || '1.0'}</span></div>
+                <div class="dbk-satir"><span class="dbk-etiket">Durum</span><span class="${badge}">${dur}</span></div>
+            </div>
+            <div class="detay-bilgi">
+                <div class="dbk-baslik"><i class="fa-solid fa-chart-simple"></i>İstatistikler</div>
+                <div class="dbk-satir"><span class="dbk-etiket">Eleman</span><span class="dbk-deger">${s.eleman_sayisi || 0}</span></div>
+                <div class="dbk-satir"><span class="dbk-etiket">Bağlantı</span><span class="dbk-deger">${s.baglanti_sayisi || 0}</span></div>
+                <div class="dbk-satir"><span class="dbk-etiket">Kimlik</span><span style="font-size:11px;color:#94a3b8;">${s.meta.kimlik}</span></div>
+            </div>
+        </div>
+        ${s.meta.aciklama ? `<div class="card-kys mb-3"><div class="ck-header"><i class="fa-solid fa-align-left text-primary"></i>Açıklama</div><div class="ck-body"><p style="font-size:13px;color:#475569;margin:0;line-height:1.6;">${s.meta.aciklama}</p></div></div>` : ''}
+        <div class="card-kys mb-3">
+            <div class="ck-header"><i class="fa-solid fa-arrow-right-arrow-left text-primary"></i>Girdi / Çıktı</div>
+            <div class="ck-body">
+                <div class="io-grid">
+                    <div class="io-kutu">
+                        <div class="io-baslik" style="color:#16a34a;"><i class="fa-solid fa-arrow-right-to-bracket"></i>Girdiler</div>
+                        ${girdiler.length ? girdiler.map(g=>`<div class="io-item"><i class="fa-solid fa-file-lines" style="color:#94a3b8;font-size:10px;"></i>${g.trim()}</div>`).join('') : '<span style="font-size:11px;color:#94a3b8;">Tanımlanmamış</span>'}
+                    </div>
+                    <div class="io-kutu">
+                        <div class="io-baslik" style="color:#2563eb;"><i class="fa-solid fa-arrow-right-from-bracket"></i>Çıktılar</div>
+                        ${ciktilar.length ? ciktilar.map(c=>`<div class="io-item"><i class="fa-solid fa-file-export" style="color:#94a3b8;font-size:10px;"></i>${c.trim()}</div>`).join('') : '<span style="font-size:11px;color:#94a3b8;">Tanımlanmamış</span>'}
+                    </div>
+                </div>
+            </div>
+        </div>
+        ${iliskili.length ? `<div class="card-kys mb-3"><div class="ck-header"><i class="fa-solid fa-link text-primary"></i>İlişkili Süreçler</div><div class="ck-body">${iliskili.map(r=>`<span onclick="detayGoster('${r.trim()}')" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:12px;font-weight:600;cursor:pointer;margin:3px;">${r.trim()}</span>`).join('')}</div></div>` : ''}
+
+        <!-- Şema önizleme -->
+        <div class="card-kys">
+            <div class="ck-header"><i class="fa-solid fa-diagram-project text-primary"></i>Süreç Şeması</div>
+            <div class="ck-body p-0">
+                <div class="sema-preview-wrap">
+                    <svg class="sema-preview-svg" id="mini-svg-${kimlik}" xmlns="http://www.w3.org/2000/svg"></svg>
+                    <div class="sema-preview-actions">
+                        <button class="btn-preview-zoom" onclick="lbAc('${kimlik}')">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i> Büyüt
+                        </button>
+                        ${IS_EDITOR ? `<button class="btn-preview-edit" onclick="surecDuzenle('${kimlik}')">
+                            <i class="fa-solid fa-pen-ruler"></i> Tasarımcıda Düzenle
+                        </button>` : ''}
+                        <span style="margin-left:auto;font-size:11px;color:#94a3b8;">${s.eleman_sayisi||0} eleman · ${s.baglanti_sayisi||0} bağlantı</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Mini SVG render
+    setTimeout(() => {
+        const miniSvg = document.getElementById('mini-svg-' + kimlik);
+        if (miniSvg) {
+            const W = miniSvg.clientWidth || 400;
+            const H = 180;
+            miniSvg.innerHTML = buildPreviewSVG(s.elemanlar || [], s.baglantilar || [], W, H);
+        }
+    }, 60);
+}
+
+async function surecDuzenle(kimlik) {
+    if (!IS_EDITOR) return;
+    const s = surecListesi.find(x => x.meta?.kimlik === kimlik);
+    if (!s) return;
+    notif('Yükleniyor...', 'fa-spinner');
+    let detay = s;
+    if (surecListesi === ORNEK_SURECLER || (s.elemanlar && s.elemanlar.length > 0)) {
+        detay = s;
+    } else {
+        try {
+            const r = await fetch('/surec/api/detay/' + kimlik);
+            detay = await r.json();
+        } catch(e) {}
+    }
+    bpmnState.meta = Object.assign({}, detay.meta);
+    bpmnYukle({ elemanlar: detay.elemanlar || [], baglantilar: detay.baglantilar || [] });
+    document.getElementById('bpmn-adi').value = detay.meta.ad || 'Süreç';
+    surecPanel('bpmn', document.getElementById('nav-bpmn'));
+    notif('Düzenleme moduna alındı: ' + detay.meta.ad, 'fa-pen');
+}
+
+async function surecSil(kimlik) {
+    if (!IS_EDITOR) return;
+    if (!confirm('Bu süreci silmek istediğinize emin misiniz?')) return;
+    if (SUNUCU_SURECLER.length > 0) {
+        try {
+            const r = await fetch('/surec/api/sil/' + kimlik, { method: 'DELETE' });
+            const d = await r.json();
+            if (d.durum !== 'ok') { notif('Silinemedi: ' + (d.hata || ''), 'fa-circle-xmark'); return; }
+        } catch(e) { notif('Sunucu hatası', 'fa-circle-xmark'); return; }
+    }
+    surecListesi = surecListesi.filter(s => s.meta?.kimlik !== kimlik);
+    listeYenile(); mudürlükYenile(); disKpiGuncelle();
+    notif('Süreç silindi', 'fa-trash');
+}
+
+/* ═══════════════════════════════════════════════════════
+   BPMN EDİTÖR STATE
+═══════════════════════════════════════════════════════ */
+let bpmnState = {
+    elemanlar: [], baglantilar: [],
+    secili: null, seciliBag: null,
+    zoom: 1, ox: 40, oy: 40,
+    arac: 'secici',
+    baslangic: null,
+    suruk: null, surukBasX: 0, surukBasY: 0, surukElBasX: 0, surukElBasY: 0,
+    canvasSuruk: false, canvasSurukX: 0, canvasSurukY: 0,
+    gecmis: [], gelecek: [],
+    sayac: 0,
+    kopyalanan: null,
+    ctxHedef: null,
+    izgara: true,
+    meta: { kimlik: 'S-' + Date.now(), ad: 'Yeni Süreç', mudürlük: '', aciklama: '', girdiler: '', ciktilar: '', versiyon: '1.0', durum: 'Aktif' }
+};
+
+function uid() { return 'el-' + (++bpmnState.sayac) + '-' + Date.now().toString(36); }
+const getCanvas = () => document.getElementById('bpmn-canvas');
+const getSvg    = () => document.getElementById('svg-layer');
+const getWrap   = () => document.getElementById('canvas-wrap');
+
+/* ═══════════════════════════════════════════════════════
+   BOYUTLAR
+═══════════════════════════════════════════════════════ */
+function elW(tip) { return ['start','end','mid'].includes(tip) ? 36 : ['gw','pgw'].includes(tip) ? 46 : tip === 'note' ? 110 : 110; }
+function elH(tip) { return ['start','end','mid'].includes(tip) ? 36 : ['gw','pgw'].includes(tip) ? 46 : tip === 'note' ? 54 : 56; }
+function elLabel(tip) {
+    const m = { start:'Başlangıç', end:'Bitiş', mid:'Ara Olay', task:'Görev', user:'Kullanıcı', send:'Gönder', recv:'Al', gw:'Karar', pgw:'Paralel', note:'Not...' };
+    return m[tip] || tip;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ELEMENT RENDER
+═══════════════════════════════════════════════════════ */
+function elRender(el) {
+    let prev = document.getElementById('bel-' + el.id);
+    if (prev) prev.remove();
+    const div = document.createElement('div');
+    div.className = 'bel' + (bpmnState.secili?.id === el.id ? ' sel' : '');
+    div.id = 'bel-' + el.id;
+    div.style.cssText = `left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;`;
+    div.innerHTML = elHTML(el);
+    // Connection points
+    [['50%','0'],['100%','50%'],['50%','100%'],['0','50%']].forEach(([l,t]) => {
+        const cp = document.createElement('div');
+        cp.className = 'conn-pt';
+        cp.style.cssText = `left:${l};top:${t};`;
+        cp.addEventListener('mousedown', e => { e.stopPropagation(); baglantiBaslat(el); });
+        div.appendChild(cp);
+    });
+    div.addEventListener('mousedown', e => {
+        if (e.target.classList.contains('conn-pt')) return;
+        e.stopPropagation();
+        if (bpmnState.arac === 'conn') { baglantiBaslat(el); return; }
+        elSec(el);
+        if (bpmnState.arac === 'secici' && IS_EDITOR) {
+            bpmnState.suruk = el;
+            bpmnState.surukBasX = e.clientX; bpmnState.surukBasY = e.clientY;
+            bpmnState.surukElBasX = el.x; bpmnState.surukElBasY = el.y;
+        }
+    });
+    div.addEventListener('dblclick', e => { e.stopPropagation(); if (IS_EDITOR) elDuzenleModal(el); });
+    div.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); elSec(el); bpmnState.ctxHedef = el; ctxGoster(e.clientX, e.clientY); });
+    // Bağlantı tamamlama: bu elemana mouseup gelince
+    div.addEventListener('mouseup', e => {
+        if (bpmnState.baslangic && bpmnState.baslangic.id !== el.id) {
+            e.stopPropagation();
+            baglantiTamamla(el);
+        }
+    });
+    getCanvas().appendChild(div);
+}
+
+function elHTML(el) {
+    const renk = el.renk ? `style="border-color:${el.renk};"` : '';
+    const showLabel = !['note'].includes(el.tip);
+    let ic = '';
+    if (el.tip === 'start') ic = `<div class="bel-inner"><div class="bpol start" ${renk}></div></div>`;
+    else if (el.tip === 'end') ic = `<div class="bel-inner"><div class="bpol end" ${renk}></div></div>`;
+    else if (el.tip === 'mid') ic = `<div class="bel-inner"><div class="bpol mid" ${renk}><div class="bpol-mid-inner"></div></div></div>`;
+    else if (['task','user','send','recv'].includes(el.tip)) {
+        const cls = el.tip === 'user' ? 'user' : el.tip === 'send' ? 'send' : el.tip === 'recv' ? 'recv' : '';
+        const ikon = el.tip === 'user' ? '👤' : el.tip === 'send' ? '📤' : el.tip === 'recv' ? '📥' : '';
+        ic = `<div class="bel-inner"><div class="bptask ${cls}" ${renk} style="width:${el.w}px;height:${el.h}px;">
+            ${ikon ? `<div class="bptask-icon">${ikon}</div>` : ''}
+            <span>${el.etiket}${el.numa ? '<br><small style="font-size:9px;color:#94a3b8;font-weight:400;">'+el.numa+'</small>' : ''}</span>
+        </div></div>`;
+    } else if (['gw','pgw'].includes(el.tip)) {
+        const cls = el.tip === 'pgw' ? 'parallel' : '';
+        const txt = el.tip === 'pgw' ? '+' : '×';
+        ic = `<div class="bel-inner"><div class="bpgw"><div class="bpgw-diamond ${cls}" ${renk}></div><div class="bpgw-text">${txt}</div></div></div>`;
+    } else if (el.tip === 'note') {
+        ic = `<div class="bel-inner"><div class="bpnote" style="width:${el.w}px;min-height:${el.h}px;">${el.etiket}</div></div>`;
+    }
+    return ic + (showLabel ? `<div class="bel-label">${el.etiket}</div>` : '');
+}
+
+function elSec(el) {
+    tumSecimKaldir();
+    bpmnState.secili = el;
+    document.getElementById('bel-' + el.id)?.classList.add('sel');
+    propsGoster(el);
+}
+
+function bagSec(bag) {
+    tumSecimKaldir();
+    bpmnState.seciliBag = bag;
+    const g = document.getElementById('bag-' + bag.id);
+    g?.querySelectorAll('path.conn-line').forEach(p => p.classList.add('sel'));
+    propsBag(bag);
+}
+
+function tumSecimKaldir() {
+    document.querySelectorAll('.bel.sel').forEach(e => e.classList.remove('sel'));
+    document.querySelectorAll('.conn-line.sel').forEach(c => c.classList.remove('sel'));
+    bpmnState.secili = null; bpmnState.seciliBag = null;
+    propsEmpty();
+}
+
+/* ═══════════════════════════════════════════════════════
+   BAĞLANTI RENDER — ÇİZGİ GÖRÜNÜR (DÜZELTİLMİŞ)
+═══════════════════════════════════════════════════════ */
+function elMerkez(el) { return { x: el.x + el.w / 2, y: el.y + el.h / 2 }; }
+
+function bagCikis(el, hx, hy) {
+    const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
+    const dx = hx - cx, dy = hy - cy;
+    if (Math.abs(dx) > Math.abs(dy)) {
+        return dx > 0 ? [el.x + el.w, cy] : [el.x, cy];
+    }
+    return dy > 0 ? [cx, el.y + el.h] : [cx, el.y];
+}
+
+function bagGiris(el, kx, ky) {
+    const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
+    const dx = kx - cx, dy = ky - cy;
+    if (Math.abs(dx) > Math.abs(dy)) {
+        return dx > 0 ? [el.x, cy] : [el.x + el.w, cy];
+    }
+    return dy > 0 ? [cx, el.y] : [cx, el.y + el.h];
+}
+
+function bagRender(bag) {
+    document.getElementById('bag-' + bag.id)?.remove();
+    document.getElementById('bag-lbl-' + bag.id)?.remove();
+
+    const k = bpmnState.elemanlar.find(e => e.id === bag.kaynak);
+    const h = bpmnState.elemanlar.find(e => e.id === bag.hedef);
+    if (!k || !h) return;
+
+    const km = elMerkez(k);
+    const hm = elMerkez(h);
+    const [kx, ky] = bagCikis(k, hm.x, hm.y);
+    const [hx, hy] = bagGiris(h, km.x, km.y);
+
+    const dx = hx - kx, dy = hy - ky;
+    const d = `M ${kx} ${ky} C ${kx + dx * 0.5} ${ky}, ${kx + dx * 0.5} ${hy}, ${hx} ${hy}`;
+
+    const svg = getSvg();
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.id = 'bag-' + bag.id;
+    g.style.pointerEvents = 'all';
+
+    // Görünmez hit alanı (tıklama kolaylığı)
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    hit.setAttribute('d', d);
+    hit.setAttribute('stroke', 'transparent');
+    hit.setAttribute('stroke-width', '14');
+    hit.setAttribute('fill', 'none');
+    hit.style.pointerEvents = 'stroke';
+    hit.style.cursor = 'pointer';
+
+    // Görsel çizgi
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.classList.add('conn-line');
+    if (bag.tip === 'msg') path.classList.add('msg');
+    if (bpmnState.seciliBag?.id === bag.id) path.classList.add('sel');
+
+    // Ok ucu marker
+    const markerId = bag.tip === 'msg' ? 'ok-purple' : (bpmnState.seciliBag?.id === bag.id ? 'ok-blue' : 'ok');
+    path.setAttribute('marker-end', `url(#${markerId})`);
+
+    g.appendChild(hit);
+    g.appendChild(path);
+
+    g.addEventListener('click', e => { e.stopPropagation(); bagSec(bag); });
+
+    svg.appendChild(g);
+
+    // Etiket
+    if (bag.etiket) {
+        const mx = (kx + hx) / 2, my = (ky + hy) / 2 - 6;
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.id = 'bag-lbl-' + bag.id;
+        txt.classList.add('conn-lbl');
+        txt.setAttribute('x', mx); txt.setAttribute('y', my);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.textContent = bag.etiket;
+        svg.appendChild(txt);
+    }
+}
+
+function baglantilarGuncelle() { bpmnState.baglantilar.forEach(b => bagRender(b)); }
+
+/* ═══════════════════════════════════════════════════════
+   BAGLANTI BAŞLAT / TAMAMLA — GEÇİCİ ÇİZGİ DÜZELTİLDİ
+═══════════════════════════════════════════════════════ */
+function baglantiBaslat(el) {
+    if (!IS_EDITOR) return;
+    // Zaten bağlantı başlatılmışsa iptal et
+    if (bpmnState.baslangic) { baglantiIptal(); }
+    bpmnState.baslangic = el;
+    getWrap().classList.add('conn-mode');
+    // Geçici çizgi (SVG içine, canvas transform'dan bağımsız değil — canvas içine ekliyoruz)
+    const svg = getSvg();
+    let gecici = document.getElementById('gecici');
+    if (gecici) gecici.remove();
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.id = 'gecici';
+    p.setAttribute('stroke', '#2563eb');
+    p.setAttribute('stroke-width', '2');
+    p.setAttribute('stroke-dasharray', '6,3');
+    p.setAttribute('fill', 'none');
+    p.setAttribute('marker-end', 'url(#ok-blue)');
+    p.style.pointerEvents = 'none';
+    svg.appendChild(p);
+}
+
+function baglantiTamamla(hedef) {
+    const bas = bpmnState.baslangic;
+    if (!bas || bas.id === hedef.id) { baglantiIptal(); return; }
+    if (bpmnState.baglantilar.find(b => b.kaynak === bas.id && b.hedef === hedef.id)) { baglantiIptal(); return; }
+    const bag = { id: uid(), kaynak: bas.id, hedef: hedef.id, tip: 'seq', etiket: '' };
+    bpmnState.baglantilar.push(bag);
+    bagRender(bag);
+    baglantiIptal();
+    gecmisKaydet();
+    durumGuncelle();
+    notif('Bağlantı eklendi', 'fa-arrow-right-long');
+}
+
+function baglantiIptal() {
+    bpmnState.baslangic = null;
+    getWrap().classList.remove('conn-mode');
+    document.getElementById('gecici')?.remove();
+}
+
+/* ═══════════════════════════════════════════════════════
+   CANVAS EVENTS
+═══════════════════════════════════════════════════════ */
+function bpmnInit() {
+    document.querySelectorAll('.pal-item[draggable]').forEach(item => {
+        item.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('tip', item.dataset.tip);
+        });
+    });
+
+    const wrap = getWrap();
+    if (!wrap) return;
+
+    wrap.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.deltaY > 0 ? -0.1 : 0.1, e.clientX, e.clientY); }, { passive: false });
+
+    wrap.addEventListener('mousedown', e => {
+        if (e.button !== 0) return;
+        const canvas = getCanvas(), svg = getSvg();
+        // SVG üzerinde tıklama ama eleman değil
+        if (e.target === wrap || e.target === canvas || e.target === svg || e.target.tagName === 'svg') {
+            tumSecimKaldir();
+            if (bpmnState.arac === 'el') {
+                bpmnState.canvasSuruk = true;
+                bpmnState.canvasSurukX = e.clientX - bpmnState.ox;
+                bpmnState.canvasSurukY = e.clientY - bpmnState.oy;
+                wrap.classList.add('dragging');
+            }
+        }
+    });
+
+    wrap.addEventListener('mousemove', e => {
+        const r = wrap.getBoundingClientRect();
+        const x = (e.clientX - r.left - bpmnState.ox) / bpmnState.zoom;
+        const y = (e.clientY - r.top - bpmnState.oy) / bpmnState.zoom;
+        const stPos = document.getElementById('st-pos');
+        if (stPos) stPos.textContent = Math.round(x) + ', ' + Math.round(y);
+
+        if (bpmnState.canvasSuruk) {
+            bpmnState.ox = e.clientX - bpmnState.canvasSurukX;
+            bpmnState.oy = e.clientY - bpmnState.canvasSurukY;
+            kanvasUygula();
+        }
+        if (bpmnState.suruk) {
+            let nx = bpmnState.surukElBasX + (e.clientX - bpmnState.surukBasX) / bpmnState.zoom;
+            let ny = bpmnState.surukElBasY + (e.clientY - bpmnState.surukBasY) / bpmnState.zoom;
+            if (bpmnState.izgara) { nx = Math.round(nx / 20) * 20; ny = Math.round(ny / 20) * 20; }
+            bpmnState.suruk.x = nx; bpmnState.suruk.y = ny;
+            const el = document.getElementById('bel-' + bpmnState.suruk.id);
+            if (el) { el.style.left = nx + 'px'; el.style.top = ny + 'px'; }
+            baglantilarGuncelle();
+        }
+        // Geçici bağlantı çizgisini güncelle
+        if (bpmnState.baslangic) {
+            const gecici = document.getElementById('gecici');
+            if (gecici) {
+                const bas = bpmnState.baslangic;
+                const [kx, ky] = [bas.x + bas.w/2, bas.y + bas.h/2];
+                gecici.setAttribute('d', `M ${kx} ${ky} L ${x} ${y}`);
+            }
+        }
+    });
+
+    wrap.addEventListener('mouseup', e => {
+        if (bpmnState.suruk) { gecmisKaydet(); bpmnState.suruk = null; }
+        if (bpmnState.canvasSuruk) { bpmnState.canvasSuruk = false; wrap.classList.remove('dragging'); }
+        // Bağlantı modu aktifse ve boş alana bırakıldıysa iptal
+        if (bpmnState.baslangic) {
+            const bel = e.target.closest('.bel');
+            if (!bel) baglantiIptal();
+        }
+    });
+
+    wrap.addEventListener('dblclick', e => {
+        if (!IS_EDITOR) return;
+        const canvas = getCanvas(), svg = getSvg();
+        if ((e.target === wrap || e.target === canvas || e.target === svg || e.target.tagName === 'svg') && bpmnState.arac === 'secici') {
+            const r = wrap.getBoundingClientRect();
+            const x = Math.round((e.clientX - r.left - bpmnState.ox) / bpmnState.zoom / 20) * 20;
+            const y = Math.round((e.clientY - r.top - bpmnState.oy) / bpmnState.zoom / 20) * 20;
+            elEkle('task', x - 55, y - 28);
+        }
+    });
+
+    wrap.addEventListener('contextmenu', e => { e.preventDefault(); ctxKapat(); });
+
+    // Klavye
+    document.addEventListener('keydown', e => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (aktifPanel !== 'bpmn') return;
+        if (e.ctrlKey || e.metaKey) {
+            if (e.key.toLowerCase() === 's') { e.preventDefault(); kaydetVeKutup(); }
+            if (e.key.toLowerCase() === 'z') { e.preventDefault(); geriAl(); }
+            if (e.key.toLowerCase() === 'y') { e.preventDefault(); ileriAl(); }
+            if (e.key.toLowerCase() === 'c') { e.preventDefault(); kopyala(); }
+            if (e.key.toLowerCase() === 'v') { e.preventDefault(); yapistir(); }
+        } else {
+            if (e.key === 'Delete' || e.key === 'Backspace') secilenSil();
+            if (e.key === 'v' || e.key === 'V') aracSec('secici');
+            if (e.key === 'h' || e.key === 'H') aracSec('el');
+            if (e.key === 'c' || e.key === 'C') aracSec('conn');
+            if (e.key === 'f' || e.key === 'F') sigdir();
+            if (e.key === 'Escape') { tumSecimKaldir(); baglantiIptal(); aracSec('secici'); }
+        }
+    });
+
+    document.addEventListener('click', ctxKapat);
+}
+
+function elmanDusur(e) {
+    if (!IS_EDITOR) return;
+    e.preventDefault();
+    const tip = e.dataTransfer.getData('tip');
+    if (!tip) return;
+    const r = getWrap().getBoundingClientRect();
+    const x = Math.round((e.clientX - r.left - bpmnState.ox) / bpmnState.zoom / 20) * 20;
+    const y = Math.round((e.clientY - r.top - bpmnState.oy) / bpmnState.zoom / 20) * 20;
+    elEkle(tip, x, y);
+}
+
+function elEkle(tip, x, y, label) {
+    const el = { id: uid(), tip, x, y, w: elW(tip), h: elH(tip), etiket: label || elLabel(tip), aciklama: '', numa: '', renk: null };
+    bpmnState.elemanlar.push(el);
+    elRender(el);
+    gecmisKaydet();
+    durumGuncelle();
+    notif('Eklendi: ' + el.etiket, 'fa-check');
+}
+
+function kanvasUygula() {
+    const canvas = getCanvas();
+    if (canvas) canvas.style.transform = `translate(${bpmnState.ox}px,${bpmnState.oy}px) scale(${bpmnState.zoom})`;
+}
+
+function zoomAt(delta, cx, cy) {
+    const ez = bpmnState.zoom;
+    bpmnState.zoom = Math.max(0.2, Math.min(3, bpmnState.zoom + delta));
+    const r = getWrap().getBoundingClientRect();
+    const mx = (cx - r.left - bpmnState.ox) / ez, my = (cy - r.top - bpmnState.oy) / ez;
+    bpmnState.ox = cx - r.left - mx * bpmnState.zoom;
+    bpmnState.oy = cy - r.top - my * bpmnState.zoom;
+    kanvasUygula();
+    const lbl = document.getElementById('zoom-lbl');
+    if (lbl) lbl.textContent = Math.round(bpmnState.zoom * 100) + '%';
+}
+
+function zoomYap(delta) { zoomAt(delta, (getWrap()?.offsetWidth || 800) / 2, (getWrap()?.offsetHeight || 500) / 2); }
+
+function sigdir() {
+    if (!bpmnState.elemanlar.length) { bpmnState.zoom = 1; bpmnState.ox = 40; bpmnState.oy = 40; kanvasUygula(); return; }
+    const xs = bpmnState.elemanlar.map(e => e.x), ys = bpmnState.elemanlar.map(e => e.y);
+    const maxX = Math.max(...bpmnState.elemanlar.map(e => e.x + e.w)), maxY = Math.max(...bpmnState.elemanlar.map(e => e.y + e.h));
+    const W = (getWrap()?.offsetWidth || 800) - 80, H = (getWrap()?.offsetHeight || 500) - 80;
+    const sx = W / (maxX - Math.min(...xs) || 1), sy = H / (maxY - Math.min(...ys) || 1);
+    bpmnState.zoom = Math.min(sx, sy, 1.5);
+    bpmnState.ox = 40 - Math.min(...xs) * bpmnState.zoom;
+    bpmnState.oy = 40 - Math.min(...ys) * bpmnState.zoom;
+    kanvasUygula();
+    const lbl = document.getElementById('zoom-lbl');
+    if (lbl) lbl.textContent = Math.round(bpmnState.zoom * 100) + '%';
+}
+
+function aracSec(a) {
+    bpmnState.arac = a;
+    ['secici','el','conn'].forEach(x => document.getElementById('tb-' + x)?.classList.toggle('on', x === a));
+    const wrap = getWrap();
+    if (!wrap) return;
+    wrap.classList.toggle('el-mode', a === 'el');
+    wrap.classList.toggle('conn-mode', a === 'conn');
+    if (a !== 'conn') baglantiIptal();
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROPERTIES PANEL
+═══════════════════════════════════════════════════════ */
+function propsGoster(el) {
+    if (!IS_EDITOR) { document.getElementById('props-icerik').innerHTML = '<div class="props-empty"><i class="fa-solid fa-lock"></i><p>Sadece editörler düzenleyebilir</p></div>'; return; }
+    document.getElementById('props-icerik').innerHTML = `
+        <div class="props-field"><div class="props-label">Eleman Adı</div><input class="props-input" type="text" value="${el.etiket}" oninput="propGuncelle('etiket',this.value)"></div>
+        <div class="props-field"><div class="props-label">NUMA Kodu</div><input class="props-input" type="text" value="${el.numa||''}" placeholder="ör. 1.1" oninput="propGuncelle('numa',this.value)"></div>
+        <div class="props-field"><div class="props-label">Açıklama</div><textarea class="props-input" rows="3" oninput="propGuncelle('aciklama',this.value)">${el.aciklama||''}</textarea></div>
+        <div class="props-field"><div class="props-label">Tür</div><input class="props-input" value="${el.tip}" disabled style="color:#64748b;cursor:default;"></div>
+        <button class="props-del" onclick="secilenSil()"><i class="fa-solid fa-trash"></i>Sil</button>
+    `;
+}
+
+function propsBag(bag) {
+    if (!IS_EDITOR) return;
+    document.getElementById('props-icerik').innerHTML = `
+        <div class="props-field"><div class="props-label">Etiket</div><input class="props-input" type="text" value="${bag.etiket||''}" oninput="bagPropGuncelle('etiket',this.value)"></div>
+        <div class="props-field"><div class="props-label">Tür</div>
+            <select class="props-input" onchange="bagPropGuncelle('tip',this.value)">
+                <option value="seq" ${bag.tip==='seq'?'selected':''}>Sıra Akışı</option>
+                <option value="msg" ${bag.tip==='msg'?'selected':''}>Mesaj Akışı</option>
+            </select>
+        </div>
+        <button class="props-del" onclick="secilenSil()"><i class="fa-solid fa-trash"></i>Sil</button>
+    `;
+}
+
+function propsEmpty() { document.getElementById('props-icerik').innerHTML = '<div class="props-empty"><i class="fa-regular fa-hand-pointer"></i><p>Düzenlemek için bir eleman seçin</p></div>'; }
+
+function propGuncelle(alan, deger) {
+    if (!bpmnState.secili) return;
+    bpmnState.secili[alan] = deger;
+    elRender(bpmnState.secili);
+    baglantilarGuncelle();
+    document.getElementById('bel-' + bpmnState.secili.id)?.classList.add('sel');
+}
+
+function bagPropGuncelle(alan, deger) {
+    if (!bpmnState.seciliBag) return;
+    bpmnState.seciliBag[alan] = deger;
+    bagRender(bpmnState.seciliBag);
+}
+
+function elDuzenleModal(el) {
+    elSec(el);
+    const inp = document.querySelector('#props-icerik .props-input');
+    if (inp) inp.focus();
+}
+
+/* ═══════════════════════════════════════════════════════
+   UNDO/REDO
+═══════════════════════════════════════════════════════ */
+function gecmisKaydet() {
+    bpmnState.gecmis.push(JSON.stringify({ elemanlar: bpmnState.elemanlar, baglantilar: bpmnState.baglantilar }));
+    if (bpmnState.gecmis.length > 50) bpmnState.gecmis.shift();
+    bpmnState.gelecek = [];
+}
+
+function geriAl() {
+    if (bpmnState.gecmis.length < 2) return;
+    bpmnState.gelecek.push(bpmnState.gecmis.pop());
+    bpmnYukle(JSON.parse(bpmnState.gecmis[bpmnState.gecmis.length - 1]));
+    notif('Geri alındı', 'fa-rotate-left');
+}
+
+function ileriAl() {
+    if (!bpmnState.gelecek.length) return;
+    const s = JSON.parse(bpmnState.gelecek.pop());
+    bpmnState.gecmis.push(JSON.stringify(s));
+    bpmnYukle(s);
+    notif('İleri alındı', 'fa-rotate-right');
+}
+
+/* ═══════════════════════════════════════════════════════
+   YÜKLE / TEMİZLE
+═══════════════════════════════════════════════════════ */
+function bpmnYukle(veri) {
+    const canvas = getCanvas();
+    if (!canvas) return;
+    canvas.querySelectorAll('.bel').forEach(e => e.remove());
+    const svg = getSvg();
+    svg.querySelectorAll('g[id^="bag-"]').forEach(g => g.remove());
+    svg.querySelectorAll('text[id^="bag-lbl-"]').forEach(t => t.remove());
+    bpmnState.elemanlar = veri.elemanlar || [];
+    bpmnState.baglantilar = veri.baglantilar || [];
+    bpmnState.elemanlar.forEach(el => elRender(el));
+    bpmnState.baglantilar.forEach(b => bagRender(b));
+    tumSecimKaldir();
+    durumGuncelle();
+}
+
+function bpmnYeni() {
+    if (!IS_EDITOR) return;
+    if (bpmnState.elemanlar.length && !confirm('Mevcut süreç kaybolacak. Devam edilsin mi?')) return;
+    bpmnYukle({ elemanlar: [], baglantilar: [] });
+    bpmnState.gecmis = []; bpmnState.gelecek = [];
+    bpmnState.meta = { kimlik: 'S-' + Date.now(), ad: 'Yeni Süreç', mudürlük: '', aciklama: '', girdiler: '', ciktilar: '', versiyon: '1.0', durum: 'Aktif' };
+    const adiInput = document.getElementById('bpmn-adi');
+    if (adiInput) adiInput.value = 'Yeni Süreç';
+    gecmisKaydet();
+    notif('Yeni süreç oluşturuldu', 'fa-file-plus');
+}
+
+/* ═══════════════════════════════════════════════════════
+   KAYDET
+═══════════════════════════════════════════════════════ */
+async function bpmnKaydet() {
+    if (!IS_EDITOR) { notif('Editör yetkisi gerekli', 'fa-lock'); return; }
+    bpmnState.meta.ad = document.getElementById('bpmn-adi')?.value || bpmnState.meta.ad;
+    const veri = { meta: bpmnState.meta, elemanlar: bpmnState.elemanlar, baglantilar: bpmnState.baglantilar };
+    if (SUNUCU_SURECLER.length > 0) {
+        try {
+            const r = await fetch('/surec/api/kaydet', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(veri) });
+            const d = await r.json();
+            if (d.durum !== 'ok') { notif('Kayıt hatası: ' + (d.hata || ''), 'fa-circle-xmark'); return; }
+        } catch(e) { notif('Sunucu hatası', 'fa-circle-xmark'); return; }
+    }
+    const stTime = document.getElementById('st-time');
+    if (stTime) stTime.textContent = new Date().toLocaleTimeString('tr-TR');
+    notif('Kaydedildi', 'fa-floppy-disk');
+}
+
+async function kaydetVeKutup() {
+    if (!IS_EDITOR) { notif('Editör yetkisi gerekli', 'fa-lock'); return; }
+    await bpmnKaydet();
+    bpmnState.meta.ad = document.getElementById('bpmn-adi')?.value || bpmnState.meta.ad;
+    const mevcut = surecListesi.findIndex(s => s.meta?.kimlik === bpmnState.meta.kimlik);
+    const entry = {
+        meta: { ...bpmnState.meta },
+        elemanlar: JSON.parse(JSON.stringify(bpmnState.elemanlar)),
+        baglantilar: JSON.parse(JSON.stringify(bpmnState.baglantilar)),
+        eleman_sayisi: bpmnState.elemanlar.length,
+        baglanti_sayisi: bpmnState.baglantilar.length
+    };
+    if (mevcut >= 0) surecListesi[mevcut] = entry; else surecListesi.push(entry);
+    listeYenile(); mudürlükYenile(); disKpiGuncelle();
+    notif('Kütüphaneye eklendi: ' + bpmnState.meta.ad, 'fa-check-circle');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SEÇİLENİ SİL
+═══════════════════════════════════════════════════════ */
+function secilenSil() {
+    if (!IS_EDITOR) return;
+    if (bpmnState.secili) {
+        const id = bpmnState.secili.id;
+        bpmnState.elemanlar = bpmnState.elemanlar.filter(e => e.id !== id);
+        bpmnState.baglantilar = bpmnState.baglantilar.filter(b => b.kaynak !== id && b.hedef !== id);
+        document.getElementById('bel-' + id)?.remove();
+        baglantilarGuncelle();
+        tumSecimKaldir(); gecmisKaydet(); durumGuncelle();
+        notif('Eleman silindi', 'fa-trash');
+    } else if (bpmnState.seciliBag) {
+        const id = bpmnState.seciliBag.id;
+        bpmnState.baglantilar = bpmnState.baglantilar.filter(b => b.id !== id);
+        document.getElementById('bag-' + id)?.remove();
+        document.getElementById('bag-lbl-' + id)?.remove();
+        tumSecimKaldir(); gecmisKaydet(); durumGuncelle();
+        notif('Bağlantı silindi', 'fa-trash');
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+   COPY/PASTE
+═══════════════════════════════════════════════════════ */
+function kopyala() { if (bpmnState.secili) { bpmnState.kopyalanan = JSON.parse(JSON.stringify(bpmnState.secili)); notif('Kopyalandı', 'fa-copy'); } }
+function yapistir() {
+    if (!bpmnState.kopyalanan || !IS_EDITOR) return;
+    const y = JSON.parse(JSON.stringify(bpmnState.kopyalanan));
+    y.id = uid(); y.x += 20; y.y += 20;
+    bpmnState.elemanlar.push(y); elRender(y); elSec(y); gecmisKaydet(); durumGuncelle();
+    notif('Yapıştırıldı', 'fa-paste');
+}
+
+/* ═══════════════════════════════════════════════════════
+   DURUM ÇUBUĞU
+═══════════════════════════════════════════════════════ */
+function durumGuncelle() {
+    const se = document.getElementById('st-el'), sc = document.getElementById('st-conn');
+    if (se) se.textContent = bpmnState.elemanlar.length;
+    if (sc) sc.textContent = bpmnState.baglantilar.length;
+}
+
+/* ═══════════════════════════════════════════════════════
+   JSON
+═══════════════════════════════════════════════════════ */
+function jsonIndir() {
+    const v = { meta: bpmnState.meta, elemanlar: bpmnState.elemanlar, baglantilar: bpmnState.baglantilar };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(v, null, 2)], { type: 'application/json' }));
+    a.download = (bpmnState.meta.ad || 'surec') + '.json';
+    a.click();
+    notif('JSON indirildi', 'fa-download');
+}
+function jsonYukle(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+        try {
+            const v = JSON.parse(ev.target.result);
+            if (v.meta) bpmnState.meta = v.meta;
+            bpmnYukle(v); gecmisKaydet();
+            const adiInput = document.getElementById('bpmn-adi');
+            if (adiInput) adiInput.value = v.meta?.ad || 'Süreç';
+            notif('JSON yüklendi', 'fa-upload');
+        } catch { notif('Geçersiz JSON', 'fa-circle-xmark'); }
+    };
+    r.readAsText(f);
+}
+
+/* ═══════════════════════════════════════════════════════
+   BİLGİ MODAL
+═══════════════════════════════════════════════════════ */
+function bilgiModalAc() {
+    if (!IS_EDITOR) { notif('Editör yetkisi gerekli', 'fa-lock'); return; }
+    document.getElementById('sb-ad').value        = bpmnState.meta.ad || '';
+    document.getElementById('sb-mudürlük').value  = bpmnState.meta.mudürlük || '';
+    document.getElementById('sb-aciklama').value  = bpmnState.meta.aciklama || '';
+    document.getElementById('sb-girdiler').value  = bpmnState.meta.girdiler || '';
+    document.getElementById('sb-ciktilar').value  = bpmnState.meta.ciktilar || '';
+    document.getElementById('sb-versiyon').value  = bpmnState.meta.versiyon || '1.0';
+    document.getElementById('sb-durum').value     = bpmnState.meta.durum || 'Aktif';
+    document.getElementById('bilgi-modal').classList.add('open');
+}
+function bilgiKaydet() {
+    bpmnState.meta.ad        = document.getElementById('sb-ad').value;
+    bpmnState.meta.mudürlük  = document.getElementById('sb-mudürlük').value;
+    bpmnState.meta.aciklama  = document.getElementById('sb-aciklama').value;
+    bpmnState.meta.girdiler  = document.getElementById('sb-girdiler').value;
+    bpmnState.meta.ciktilar  = document.getElementById('sb-ciktilar').value;
+    bpmnState.meta.versiyon  = document.getElementById('sb-versiyon').value;
+    bpmnState.meta.durum     = document.getElementById('sb-durum').value;
+    const adiInput = document.getElementById('bpmn-adi');
+    if (adiInput) adiInput.value = bpmnState.meta.ad;
+    modKapat('bilgi-modal');
+    notif('Bilgiler güncellendi', 'fa-check-circle');
+}
+
+function modKapat(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.mod-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+
+/* ═══════════════════════════════════════════════════════
+   CONTEXT MENU
+═══════════════════════════════════════════════════════ */
+function ctxGoster(x, y) {
+    const m = document.getElementById('ctx-menu');
+    m.style.left = x + 'px'; m.style.top = y + 'px';
+    m.classList.add('open');
+}
+function ctxKapat(e) { if (!e || !e.target.closest('#ctx-menu')) document.getElementById('ctx-menu').classList.remove('open'); }
+function ctxDuzenle() { ctxKapat(); if (bpmnState.ctxHedef && IS_EDITOR) { elSec(bpmnState.ctxHedef); } }
+function ctxKopyala() { ctxKapat(); if (bpmnState.ctxHedef) { bpmnState.kopyalanan = JSON.parse(JSON.stringify(bpmnState.ctxHedef)); notif('Kopyalandı', 'fa-copy'); } }
+function ctxSil()     { ctxKapat(); secilenSil(); }
+
+/* ═══════════════════════════════════════════════════════
+   BİLDİRİM
+═══════════════════════════════════════════════════════ */
+function notif(msg, icon = 'fa-check-circle') {
+    const wrap = document.getElementById('notif-wrap');
+    if (!wrap) return;
+    const el = document.createElement('div');
+    el.className = 'notif';
+    el.innerHTML = `<i class="fa-solid ${icon}" style="color:#2563eb;"></i>${msg}`;
+    wrap.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 2500);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODAL AÇILINCA BPMN INIT
+═══════════════════════════════════════════════════════ */
+let bpmnInitDone = false;
+document.getElementById('surecModal')?.addEventListener('shown.bs.modal', () => {
+    listeYenile();
+    if (!bpmnInitDone) {
+        bpmnInitDone = true;
+        bpmnInit();
+        gecmisKaydet();
+    }
+});
+</script>
+{% endblock %}
