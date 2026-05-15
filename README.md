@@ -7,7 +7,8 @@ amaç; dijitalleşme yaklaşımını kalite yönetim sistemlerine entegre ederek
 geliştirilebilir ve izlenebilir bir yapı oluşturmak, aynı zamanda kalite süreçlerinin daha etkin 
 yönetilmesini sağlayacak bir karar destek mekanizması geliştirmektir. 
 
-Aşağıda Iso 9001 maddeleri çerçevesinde oluşturulmuş web tabanlı kalite yönetim sistemleri çalışmasının görsellerine yer verilmiştir.
+Proje kapsamında tasarlanan web tabanlı modüllerden bazılarına ait ekran görüntüleri, sistemin görsel yapısını örneklendirmek amacıyla aşağıda paylaşılmıştır.
+
 ## Proje Ekran Görüntüleri
 
 ![Ekran Görüntüsü](images/Ekran%20görüntüsü%202026-05-14%20161458.png)
