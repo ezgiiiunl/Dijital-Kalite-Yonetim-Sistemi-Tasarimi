@@ -1,4 +1,21 @@
 # Dijital-Kalite-Yonetim-Sistemi-Tasarimi
-Iso 9001 maddeleri çerçevesinde oluşturulmuş web tabanlı kalite yönetim sistemleri 
+Ağağıda Iso 9001 maddeleri çerçevesinde oluşturulmuş web tabanlı kalite yönetim sistemleri çalışmasının görsellerine yer verilmiştir.
 
-
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161458.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161518.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161528.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161539.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161551.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161603.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161636.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161651.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161707.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161718.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161752.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161806.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161820.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161836.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161849.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161905.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161918.png)
+![Ekran Görüntüsü](resimler/Ekran%20görüntüsü%202026-05-14%20161944.png)
