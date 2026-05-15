@@ -1,5 +1,13 @@
 # Dijital-Kalite-Yonetim-Sistemi-Tasarimi
-Ağağıda Iso 9001 maddeleri çerçevesinde oluşturulmuş web tabanlı kalite yönetim sistemleri çalışmasının görsellerine yer verilmiştir.
+
+Dijitalleşme, iş süreçlerinin büyük bir bölümünü etkileyerek kurumlar için vazgeçilmez bir yapı 
+haline gelmiştir. Evrak takibi, form yönetimi, aksiyon izleme ve raporlama gibi süreçlerin dijital 
+ortamlarda yürütülmesi artık önemli bir gereklilik olarak görülmektedir. Bu proje kapsamında 
+amaç; dijitalleşme yaklaşımını kalite yönetim sistemlerine entegre ederek sürdürülebilir, 
+geliştirilebilir ve izlenebilir bir yapı oluşturmak, aynı zamanda kalite süreçlerinin daha etkin 
+yönetilmesini sağlayacak bir karar destek mekanizması geliştirmektir. 
+
+Aşağıda Iso 9001 maddeleri çerçevesinde oluşturulmuş web tabanlı kalite yönetim sistemleri çalışmasının görsellerine yer verilmiştir.
 ## Proje Ekran Görüntüleri
 
 ![Ekran Görüntüsü](images/Ekran%20görüntüsü%202026-05-14%20161458.png)
