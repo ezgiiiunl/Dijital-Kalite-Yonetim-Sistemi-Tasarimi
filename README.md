@@ -1,5 +1,8 @@
 # Dijital-Kalite-Yonetim-Sistemi-Tasarimi
 
+Rapor: [KALİTE YÖNETİM SİSTEMLERİNİN DİJİTALLEŞTİRİLMESİ.pdf](https://github.com/user-attachments/files/27791984/KALITE.YONETIM.SISTEMLERININ.DIJITALLESTIRILMESI.pdf)
+
+
 Proje Durumu: Bu çalışma şu an geliştirme aşamasındadır. Tasarımsal süreçte  yeni iyileştirmeler ve düzenlemeler yapılmaktadır.
 
 Dijitalleşme, iş süreçlerinin büyük bir bölümünü etkileyerek kurumlar için vazgeçilmez bir yapı 
