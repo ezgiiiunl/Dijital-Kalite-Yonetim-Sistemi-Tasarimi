@@ -12,7 +12,7 @@ Ağağıda Iso 9001 maddeleri çerçevesinde oluşturulmuş web tabanlı kalite 
 ![Ekran Görüntüsü](images/Ekran%20görüntüsü%202026-05-14%20161651.png)
 ![Ekran Görüntüsü](images/Ekran%20görüntüsü%202026-05-14%20161707.png)
 ![Ekran Görüntüsü](images/Ekran%20görüntüsü%202026-05-14%20161718.png)
-![Ekran Görüntüsü](images/images/Ekran%20görüntüsü%202026-05-14%20161752.png)
+![Ekran Görüntüsü](images/Ekran%20görüntüsü%202026-05-14%20161752.png)
 ![Ekran Görüntüsü](images/Ekran%20görüntüsü%202026-05-14%20161806.png)
 ![Ekran Görüntüsü](images/Ekran%20görüntüsü%202026-05-14%20161820.png)
 ![Ekran Görüntüsü](images/Ekran%20görüntüsü%202026-05-14%20161836.png)
